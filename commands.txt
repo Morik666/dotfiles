@@ -1,0 +1,13 @@
+# nixos
+sudo nix-channel --update
+sudo nixos-rebuild --flake ~/.config/nix switch
+nix-env --delete-generations old
+
+# reload bashrc
+source ~/.bashrc
+
+# mounting partitions
+# in home dir, first command is already done
+sudo mkdir ~/pop
+sudo mount -t auto /dev/nvme0n1p3 ~/pop
+sudo umount /dev/nvme0n1p3
