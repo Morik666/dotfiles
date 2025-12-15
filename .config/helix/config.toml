@@ -1,0 +1,43 @@
+theme = "everforest_dark"
+#auto-format = false
+#preview-completion-insert = false
+
+[editor]
+bufferline = "always"
+
+[editor.whitespace]
+#render = "all"
+
+[editor.whitespace.render]
+space = "all"
+tab = "all"
+nbsp = "none"
+nnbsp = "none"
+newline = "none"
+
+[editor.whitespace.characters]
+space = "·"
+nbsp = "⍽"
+nnbsp = "␣"
+tab = "→"
+newline = "⏎"
+tabpad = "·"
+
+[editor.indent-guides]
+render = true
+character = "╎" # Some characters that work well: "▏", "┆", "┊", "⸽"
+skip-levels = 1
+
+[editor.cursor-shape]
+insert = "bar"
+
+[keys.normal]
+"C-t" = ":buffer-next"
+"C-l" = "jump_view_right"
+"C-h" = "jump_view_left"
+
+[keys.insert]
+"A-x" = "normal_mode"  # Maps Alt-X to enter normal mode
+j = { k = "normal_mode" }  # Maps `jk` to exit insert mode
+"C-right" = "move_next_word_start"
+"C-left" = "move_prev_word_start"
