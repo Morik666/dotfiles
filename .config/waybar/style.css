@@ -1,0 +1,73 @@
+@import "everforest.css";
+@import "playerctl.css";
+/* margin: top right bottom left */
+/* Spacing outside the element */
+
+/* padding: top right bottom left */
+/* Spacing inside the element */
+
+* {
+  font-family: ComicShannsMono Nerd Font;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+window#waybar {
+  background-color: @bg0;
+  color: @fg;
+  transition-property: background-color;
+  transition-duration: 0.5s;
+  transition-duration: .5s;
+}
+
+#custom-launcher,
+#clock,
+#clock-date,
+#backlight,
+#pulseaudio,
+#bluetooth,
+#network,
+#battery,
+#language,
+#custom-powermenu {
+  padding-left: 2px;
+  padding-right: 2px;
+  border-bottom: 2px solid @green
+}
+
+#backlight {
+  padding-right: 12px;
+}
+
+#workspaces {
+  padding: 0px;
+}
+
+#workspaces button {
+  color: @fg;
+}
+
+#workspaces button.active {
+  background-color: @green;
+  color: @bg0;
+}
+
+#custom-launcher {
+  margin-left: 15px;
+  padding-left: 15px;
+  padding-right: 21px;
+}
+
+#custom-powermenu {
+  margin-right: 15px;
+  padding-left: 20px;
+  padding-right: 23px;
+}
+
+#custom-playerctl {
+  background-color: @bg5;
+  color: @bg0;
+  border-radius: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+}

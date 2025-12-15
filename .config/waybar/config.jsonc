@@ -1,0 +1,128 @@
+{
+    "margin-top": 0,
+    "margin-bottom": 0,
+    "height": 30, 
+    "layer": "top",
+    "position": "top",
+    "output": "eDP-1",
+    "spacing": 15,
+    "modules-left": ["custom/launcher", "hyprland/workspaces", "custom/playerctl"],
+    "modules-center": [],
+    "modules-right": ["backlight", "pulseaudio", "bluetooth", "network", "battery", "clock", "hyprland/language", "custom/powermenu"],
+    // 
+
+    "hyprland/workspaces": {
+        "disable-scroll": true,
+        "all-outputs": true,
+        "on-click": "activate",
+        "on-scroll-up": "hyprctl dispatch workspace e-1",
+        "on-scroll-down": "hyprctl dispatch workspace e+1",
+        "format": "{icon}: {windows}",
+        "format-window-separator": "",
+        "workspace-taskbar": {
+            "enable": true,
+            "update-active-window": true,
+            "format": "{icon}",
+            "icon-size": 18,
+            // "on-click-window": "${SCRIPTS}/focus-window.sh {address} {button}"
+        },
+        // "window-rewrite": {
+        //   "class<ghostty>": "",
+        // },
+    },
+  
+    "custom/launcher": {
+        "interval": "once",
+        "format": "",
+      "on-click": "pkill wofi || wofi --show drun -I -s",
+      "tooltip": false,
+  },
+
+  "backlight": {
+      "interval": "60",
+      "format": "{percent}% {icon}",
+      "format-icons": ["", ""],
+      "tooltip-format": "{percent}%",
+      "scroll-step": "10.0",
+      // "on-scroll-up": "brightnessctl set 10%-",
+      // "on-scroll-down": "brightnessctl set +10%"
+  },
+
+  "pulseaudio": {
+      "format": "{icon} {volume}%",
+      "format-bluetooth": "{icon}  {volume}%",
+      "format-bluetooth-muted": " muted",
+      "format-muted": "muted",
+      "format-icons": {
+          "headphone": "",
+          "hands-free": "",
+          "headset": "",
+          "phone": "",
+          "portable": "",
+          "car": "",
+          "default": ["", "", ""],
+      },
+      "on-click-right": "pavucontrol",
+    "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+  },
+
+  "bluetooth": {
+        "on-click": "~/.config/waybar/scripts/rofi-bluetooth &",
+        "format": " {status}",
+  },
+
+  "network": {
+      "format-wifi": " {signalStrength}%",
+      "format-ethernet": " {signalStrength}%",
+      "format-disconnected": "󰤭",
+      "on-click": "~/.config/waybar/scripts/wifimenu",
+  },
+
+  "battery": {
+      "bat": "BAT1",
+      "adapter": "ADP1",
+      "interval": 60,
+      "states": {
+          "warning": 30,
+          "critical": 15,
+      },
+      "max-length": 10,
+      "format": "{icon} {capacity}%",
+      "format-warning": "{icon} {capacity}%",
+      "format-critical": "{icon} {capacity}%",
+      "format-charging": "󰂄 {capacity}%",
+      "format-plugged": " {capacity}%",
+      "format-alt": "{icon} {capacity}%",
+      "format-full": " 100%",
+      "format-icons": ["󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"],
+  },
+
+  "hyprland/language": {
+      "format": "{}",
+      "format-en": "en",
+      "format-uk": "ua",
+      "on-click": "hyprctl switchxkblayout all next",
+  },
+
+  "clock": {
+      "format": "{:%H:%M, %a %d-%m-%Y}",
+  },
+
+  "custom/powermenu": {
+      "format": "",
+      "on-click": "~/.config/waybar/scripts/powermenu",
+      "tooltip": false,
+  },
+
+  "custom/playerctl": {
+    "format": "{}",
+    "return-type": "json",
+    "max-length": 40,
+    "exec": "~/.config/waybar/scripts/playerctl.sh 2> /dev/null",
+    "on-click": "playerctl play-pause",
+    "on-right-click": "sys-notif media",
+    "on-scroll-up": "playerctl position 3+",
+    "on-scroll-down": "playerctl position 3-"
+  },
+
+}

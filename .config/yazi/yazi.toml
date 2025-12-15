@@ -1,0 +1,10 @@
+[mgr]
+show_hidden = true
+
+[preview]
+max_width = 90000
+max_height = 90000
+
+[tasks]
+image_bound = [ 65535, 65535 ]
+
