@@ -1,7 +1,10 @@
 # nixos
 sudo nix-channel --update
 sudo nixos-rebuild --flake ~/.config/nix switch
+nixos-rebuild list-generations
 nix-env --delete-generations old
+# run after "delete generations", try without -d
+sudo nix-collect-garbage -d
 
 # reload bashrc
 source ~/.bashrc

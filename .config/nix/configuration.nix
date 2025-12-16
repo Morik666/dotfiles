@@ -140,6 +140,9 @@
   programs.waybar.enable = true;
   programs.steam.enable = true;
   services.blueman.enable = true;
+  services.devmon.enable = true;
+  services.gvfs.enable = true;
+  services.udisks2.enable = true;
 
   #xdg.portal.enable = true;
   #xdg.porta.extraPortals = [pkgs.xdg-desctop-portal-gtk ];
