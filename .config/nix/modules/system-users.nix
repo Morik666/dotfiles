@@ -1,7 +1,9 @@
-{ ... }:
+{ pkgs, ... }:
 
 {
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  users.defaultUserShell = pkgs.fish;
 
   nixpkgs = {
     config = {

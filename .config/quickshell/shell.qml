@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Widgets
 
@@ -72,6 +73,12 @@ ShellRoot {
                                 color: modelData.focused ? root.green : "transparent"
                                 visible: modelData.id > 0
 
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: workspaceSwitcher.exec(["hyprctl", "dispatch", "workspace", String(workspaceItem.modelData.id)])
+                                }
+
                                 Text {
                                     id: workspaceText
                                     anchors.centerIn: parent
@@ -104,6 +111,10 @@ ShellRoot {
                                             symbolicIcons: openPrograms.symbolicIconsFor(modelData)
                                         }
                                     }
+                                }
+
+                                Process {
+                                    id: workspaceSwitcher
                                 }
                             }
                         }
