@@ -12,25 +12,29 @@
     playerctl
     bluez
     stow
-    zsh
+    # zsh
+    fish
+    zoxide
+    python3
 
     git
-    lazygit
     zip
     gzip
     unzip
     wget
     htop
+    socat
     # neofetch
     fastfetch
     starship
     herdr
     inputs.nixpkgs-codex.legacyPackages.${pkgs.system}.codex
 
+    lazygit
     vim
     helix
     yazi
-    kitty
+    # kitty
     ghostty
 
     firefox

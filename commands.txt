@@ -12,8 +12,6 @@ sudo nix-collect-garbage -d
 # reload bashrc
 source ~/.bashrc
 
-pkill waybar & waybar &
-
 # mounting partitions
 # in home dir, first command is already done
 sudo mkdir ~/pop
