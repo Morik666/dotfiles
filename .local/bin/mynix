@@ -63,24 +63,7 @@ require_command() {
   fi
 }
 
-ensure_flake_lock_writable() {
-  local lock_file="$flake_dir/flake.lock"
-
-  if [[ ! -e "$lock_file" || -w "$lock_file" ]]; then
-    return
-  fi
-
-  if [[ -L "$lock_file" ]]; then
-    echo "mynix: $lock_file is a symlink and is not writable" >&2
-    echo "mynix: refusing to repair ownership with sudo" >&2
-    exit 1
-  fi
-
-  echo "==> Repairing flake.lock ownership"
-  sudo chown "$(id -u):$(id -g)" "$lock_file"
-}
-
-switch_system() {
+switch_cheks() {
   if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
     echo "mynix: do not run this command with sudo" >&2
     echo "mynix: run mynix as your user; it will ask for sudo when switching" >&2
@@ -97,10 +80,8 @@ switch_system() {
 }
 
 update_system() {
-  switch_system
+  switch_cheks
   require_command nix
-
-  ensure_flake_lock_writable
 
   echo "==> Updating flake inputs in $flake_dir"
   nix flake update --flake "$flake_dir"
@@ -110,7 +91,7 @@ update_system() {
 }
 
 install_system() {
-  switch_system
+  switch_cheks
 
   echo "==> Switching NixOS system from current flake"
   sudo nixos-rebuild switch --flake "$flake_dir"

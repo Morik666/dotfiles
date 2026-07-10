@@ -62,7 +62,7 @@ in
     fastfetch
     starship
     herdr
-    inputs.nixpkgs-codex.legacyPackages.${pkgs.system}.codex
+    inputs.nixpkgs-codex.legacyPackages.${pkgs.stdenv.hostPlatform.system}.codex
 
     lazygit
     vim
