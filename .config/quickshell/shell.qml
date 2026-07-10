@@ -13,52 +13,10 @@ ShellRoot {
     readonly property color fg: "#d3c6aa"
     readonly property color green: "#a7c080"
     readonly property string fontFamily: "ComicShannsMono Nerd Font"
-    readonly property var iconAliases: ({
-        "nemo": "nemo",
-        "zen-beta": "zen-browser"
-    })
 
-    function appIdFor(toplevel): string {
-        if (toplevel.wayland != null && toplevel.wayland.appId.length > 0)
-            return toplevel.wayland.appId;
-
-        const ipc = toplevel.lastIpcObject;
-        if (ipc != null && ipc.class != null && ipc.class.length > 0)
-            return ipc.class;
-
-        return "application-x-executable";
+    OpenPrograms {
+        id: openPrograms
     }
-
-    function iconFor(toplevel): string {
-        const appId = appIdFor(toplevel);
-        if (iconAliases[appId] != null)
-            return iconAliases[appId];
-
-        const entry = DesktopEntries.byId(appId) ?? DesktopEntries.byId(`${appId}.desktop`) ?? DesktopEntries.heuristicLookup(appId);
-        if (entry != null && entry.icon.length > 0)
-            return entry.icon;
-
-        return appId;
-    }
-
-    function symbolicIconsFor(toplevel): list<string> {
-        const appId = appIdFor(toplevel);
-        const regularIcon = iconFor(toplevel);
-        const entry = DesktopEntries.byId(appId) ?? DesktopEntries.byId(`${appId}.desktop`) ?? DesktopEntries.heuristicLookup(appId);
-        const icons = [];
-
-        if (regularIcon.length > 0)
-            icons.push(`${regularIcon}-symbolic`);
-
-        if (entry != null && entry.icon.length > 0 && entry.icon !== regularIcon)
-            icons.push(`${entry.icon}-symbolic`);
-
-        if (appId.length > 0 && appId !== regularIcon)
-            icons.push(`${appId}-symbolic`);
-
-        return icons;
-    }
-
 
     Variants {
         model: Quickshell.screens
@@ -109,7 +67,7 @@ ShellRoot {
                                 readonly property list<QtObject> windows: modelData.toplevels.values
                                 readonly property bool empty: windows.length === 0
 
-                                implicitWidth: empty ? 32 : Math.max(32, windowIcons.implicitWidth + 14)
+                                implicitWidth: empty ? 32 : Math.max(32, windowIcons.implicitWidth + 16)
                                 implicitHeight: 30
                                 color: modelData.focused ? root.green : "transparent"
                                 visible: modelData.id > 0
@@ -129,7 +87,7 @@ ShellRoot {
                                     id: windowIcons
                                     anchors.centerIn: parent
                                     visible: !parent.empty
-                                    spacing: 2
+                                    spacing: 3
 
                                     Repeater {
                                         model: workspaceItem.windows
@@ -137,10 +95,13 @@ ShellRoot {
                                         SymbolicAppIcon {
                                             required property HyprlandToplevel modelData
 
-                                            size: 18
+                                            size: 22
                                             color: workspaceItem.modelData.focused ? root.bg0 : root.fg
-                                            regularIcon: root.iconFor(modelData)
-                                            symbolicIcons: root.symbolicIconsFor(modelData)
+                                            symbol: openPrograms.symbolFor(modelData)
+                                            shape: openPrograms.shapeFor(modelData)
+                                            sourceOverride: openPrograms.sourceFor(modelData)
+                                            regularIcon: openPrograms.iconFor(modelData)
+                                            symbolicIcons: openPrograms.symbolicIconsFor(modelData)
                                         }
                                     }
                                 }

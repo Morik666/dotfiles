@@ -7,6 +7,8 @@ usage() {
   cat <<EOF
 Usage:
   mynix update
+  mynix install
+  mynix stow
   mynix cleanup [--apply] [--gc] [--keep-days N]
 
 Environment:
@@ -14,6 +16,8 @@ Environment:
 
 Commands:
   update        Update flake inputs and switch to the new system.
+  install       Switch to the current flake without updating inputs.
+  stow          Symlink dotfiles from ~/.dotfiles into ~.
   cleanup       Clean old NixOS boot generations. Dry-run by default.
 EOF
 }
@@ -76,10 +80,10 @@ ensure_flake_lock_writable() {
   sudo chown "$(id -u):$(id -g)" "$lock_file"
 }
 
-update_system() {
+switch_system() {
   if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
-    echo "mynix: do not run update with sudo" >&2
-    echo "mynix: run 'mynix update' as your user; it will ask for sudo when switching" >&2
+    echo "mynix: do not run this command with sudo" >&2
+    echo "mynix: run mynix as your user; it will ask for sudo when switching" >&2
     exit 1
   fi
 
@@ -88,9 +92,13 @@ update_system() {
     exit 1
   fi
 
-  require_command nix
   require_command nixos-rebuild
   require_command sudo
+}
+
+update_system() {
+  switch_system
+  require_command nix
 
   ensure_flake_lock_writable
 
@@ -99,6 +107,27 @@ update_system() {
 
   echo "==> Switching NixOS system"
   sudo nixos-rebuild switch --flake "$flake_dir"
+}
+
+install_system() {
+  switch_system
+
+  echo "==> Switching NixOS system from current flake"
+  sudo nixos-rebuild switch --flake "$flake_dir"
+}
+
+stow_dotfiles() {
+  local dotfiles_dir="$HOME/.dotfiles"
+
+  if [[ ! -d "$dotfiles_dir" ]]; then
+    echo "mynix: dotfiles directory not found: $dotfiles_dir" >&2
+    exit 1
+  fi
+
+  require_command stow
+
+  echo "==> Stowing dotfiles from $dotfiles_dir into $HOME"
+  stow --dir "$dotfiles_dir" --target "$HOME" .
 }
 
 cleanup_boot_generations() {
@@ -273,6 +302,24 @@ case "${1:-}" in
       exit 2
     fi
     update_system
+    ;;
+  install)
+    shift
+    if [[ $# -ne 0 ]]; then
+      echo "mynix: install does not accept arguments" >&2
+      usage >&2
+      exit 2
+    fi
+    install_system
+    ;;
+  stow)
+    shift
+    if [[ $# -ne 0 ]]; then
+      echo "mynix: stow does not accept arguments" >&2
+      usage >&2
+      exit 2
+    fi
+    stow_dotfiles
     ;;
   cleanup)
     shift

@@ -2,9 +2,8 @@
 show_hidden = true
 
 [preview]
-max_width = 90000
-max_height = 90000
+max_width = 65535
+max_height = 65535
 
 [tasks]
 image_bound = [ 65535, 65535 ]
-

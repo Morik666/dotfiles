@@ -137,9 +137,6 @@ rules = [
   { mime = "application/x-7z-compressed", fg = "#e8a2af" }, # Soft red
   { mime = "application/x-rar", fg = "#e8a2af" },           # Soft red
 
-  # Fallback
-  { name = "*", fg = "#d3c6aa" },  # Soft beige
-  { name = "*/", fg = "#d3c6aa" }, # Soft beige
 ]
 
 # : }}}
