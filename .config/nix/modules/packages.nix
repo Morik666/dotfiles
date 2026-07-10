@@ -15,6 +15,7 @@
     zsh
 
     git
+    lazygit
     zip
     gzip
     unzip

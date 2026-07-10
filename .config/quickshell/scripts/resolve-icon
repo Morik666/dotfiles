@@ -1,0 +1,48 @@
+#!/bin/sh
+
+regular=$1
+shift
+
+icon_dirs() {
+    printf '%s\n' "$HOME/.local/share/icons"
+    printf '%s\n' "$HOME/.nix-profile/share/icons"
+    printf '%s\n' "/run/current-system/sw/share/icons"
+    printf '%s\n' "/usr/share/icons"
+
+    old_ifs=$IFS
+    IFS=:
+    for dir in ${XDG_DATA_DIRS:-}; do
+        [ -n "$dir" ] && printf '%s\n' "$dir/icons"
+    done
+    IFS=$old_ifs
+}
+
+icon_exists() {
+    name=$1
+
+    case "$name" in
+        /*)
+            [ -f "$name" ] && return 0
+            return 1
+            ;;
+    esac
+
+    icon_dirs | while IFS= read -r dir; do
+        [ -d "$dir" ] || continue
+        found=$(find "$dir" -type f \( \
+            -name "$name.svg" -o \
+            -name "$name.png" -o \
+            -name "$name.xpm" \
+        \) -print -quit 2>/dev/null)
+        [ -n "$found" ] && exit 0
+    done
+}
+
+for candidate in "$@"; do
+    if icon_exists "$candidate"; then
+        printf '%s\n' "$candidate"
+        exit 0
+    fi
+done
+
+printf '%s\n' "$regular"
