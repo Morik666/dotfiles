@@ -1,0 +1,21 @@
+nmcli connection modify "Mutabor_upstairs" connection.autoconnect yes
+nmcli connection modify "Mutabor_upstairs" connection.autoconnect-priority 100
+
+# nixos
+sudo nix-channel --update
+sudo nixos-rebuild --flake ~/.config/nix switch
+nixos-rebuild list-generations
+nix-env --delete-generations old
+# run after "delete generations", try without -d
+sudo nix-collect-garbage -d
+
+# reload bashrc
+source ~/.bashrc
+
+pkill waybar & waybar &
+
+# mounting partitions
+# in home dir, first command is already done
+sudo mkdir ~/pop
+sudo mount -t auto /dev/nvme0n1p3 ~/pop
+sudo umount /dev/nvme0n1p3

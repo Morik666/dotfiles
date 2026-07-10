@@ -1,0 +1,289 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+flake_dir="${MYNIX_FLAKE:-$HOME/.config/nix}"
+
+usage() {
+  cat <<EOF
+Usage:
+  mynix update
+  mynix cleanup [--apply] [--gc] [--keep-days N]
+
+Environment:
+  MYNIX_FLAKE  Path to your Nix flake. Defaults to ~/.config/nix.
+
+Commands:
+  update        Update flake inputs and switch to the new system.
+  cleanup       Clean old NixOS boot generations. Dry-run by default.
+EOF
+}
+
+cleanup_usage() {
+  cat <<EOF
+Usage:
+  mynix cleanup [--apply] [--gc] [--keep-days N]
+  mynix cleanup -h
+  mynix cleanup --help
+
+Description:
+  Cleans old NixOS system generations that appear as boot menu entries.
+
+  Generations are grouped by build date. For each retained date group, the
+  command keeps only the first and last generation of that date and selects
+  in-between generations for deletion. By default it retains the last 3 date
+  groups, so the final boot menu usually has 3-6 entries.
+
+  The currently active generation is always kept, even if it falls outside the
+  retention policy.
+
+Options:
+  --apply        Delete selected generations. Without this flag, only prints
+                 what would be deleted.
+  --gc           After deleting generations, run nix-collect-garbage to reclaim
+                 unreachable store paths. Only meaningful with --apply.
+  --keep-days N  Retain the last N build-date groups. Defaults to 3.
+  -h, --help     Show this help.
+
+Examples:
+  mynix cleanup
+  mynix cleanup --apply
+  mynix cleanup --apply --gc
+  mynix cleanup --keep-days 5
+EOF
+}
+
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "mynix: missing required command: $1" >&2
+    exit 127
+  fi
+}
+
+ensure_flake_lock_writable() {
+  local lock_file="$flake_dir/flake.lock"
+
+  if [[ ! -e "$lock_file" || -w "$lock_file" ]]; then
+    return
+  fi
+
+  if [[ -L "$lock_file" ]]; then
+    echo "mynix: $lock_file is a symlink and is not writable" >&2
+    echo "mynix: refusing to repair ownership with sudo" >&2
+    exit 1
+  fi
+
+  echo "==> Repairing flake.lock ownership"
+  sudo chown "$(id -u):$(id -g)" "$lock_file"
+}
+
+update_system() {
+  if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+    echo "mynix: do not run update with sudo" >&2
+    echo "mynix: run 'mynix update' as your user; it will ask for sudo when switching" >&2
+    exit 1
+  fi
+
+  if [[ ! -f "$flake_dir/flake.nix" ]]; then
+    echo "mynix: flake.nix not found in $flake_dir" >&2
+    exit 1
+  fi
+
+  require_command nix
+  require_command nixos-rebuild
+  require_command sudo
+
+  ensure_flake_lock_writable
+
+  echo "==> Updating flake inputs in $flake_dir"
+  nix flake update --flake "$flake_dir"
+
+  echo "==> Switching NixOS system"
+  sudo nixos-rebuild switch --flake "$flake_dir"
+}
+
+cleanup_boot_generations() {
+  local apply=false
+  local run_gc=false
+  local keep_days=3
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --apply)
+        apply=true
+        shift
+        ;;
+      --gc)
+        run_gc=true
+        shift
+        ;;
+      --keep-days)
+        if [[ $# -lt 2 || ! "$2" =~ ^[0-9]+$ || "$2" -lt 1 ]]; then
+          echo "mynix: --keep-days expects a positive integer" >&2
+          exit 2
+        fi
+        keep_days="$2"
+        shift 2
+        ;;
+      -h|--help)
+        cleanup_usage
+        return
+        ;;
+      *)
+        echo "mynix: unknown cleanup option: $1" >&2
+        cleanup_usage >&2
+        exit 2
+        ;;
+    esac
+  done
+
+  require_command nixos-rebuild
+  require_command nix-env
+  require_command sort
+  require_command sudo
+
+  local rows=()
+  mapfile -t rows < <(
+    nixos-rebuild list-generations --json |
+      while IFS= read -r line; do
+        if [[ "$line" =~ \"generation\":[[:space:]]*([0-9]+) ]]; then
+          generation="${BASH_REMATCH[1]}"
+        elif [[ "$line" =~ \"date\":[[:space:]]*\"([0-9]{4}-[0-9]{2}-[0-9]{2})[[:space:]]([0-9]{2}:[0-9]{2}:[0-9]{2})\" ]]; then
+          day="${BASH_REMATCH[1]}"
+          time="${BASH_REMATCH[2]}"
+        elif [[ "$line" =~ \"current\":[[:space:]]*(true|false) ]]; then
+          current="${BASH_REMATCH[1]}"
+          if [[ -n "${generation:-}" && -n "${day:-}" && -n "${time:-}" ]]; then
+            printf '%s\t%s\t%s\t%s\n' "$generation" "$day" "$time" "$current"
+          fi
+          generation=
+          day=
+          time=
+          current=
+        fi
+      done |
+      sort -t $'\t' -k2,2 -k3,3 -k1,1n
+  )
+
+  if [[ "${#rows[@]}" -eq 0 ]]; then
+    echo "mynix: no NixOS system generations found" >&2
+    exit 1
+  fi
+
+  local days=()
+  local previous_day=
+  local row generation day time current
+  for row in "${rows[@]}"; do
+    IFS=$'\t' read -r generation day time current <<<"$row"
+    if [[ "$day" != "$previous_day" ]]; then
+      days+=("$day")
+      previous_day="$day"
+    fi
+  done
+
+  local keep_start=$((${#days[@]} - keep_days))
+  if (( keep_start < 0 )); then
+    keep_start=0
+  fi
+
+  local keep_day_list=("${days[@]:keep_start}")
+  local delete_generations=()
+  local keep_generations=()
+  local current_kept_outside_policy=()
+
+  day_is_kept() {
+    local candidate="$1"
+    local kept_day
+    for kept_day in "${keep_day_list[@]}"; do
+      [[ "$candidate" == "$kept_day" ]] && return 0
+    done
+    return 1
+  }
+
+  finish_group() {
+    local group_day="$1"
+    shift
+    local group=("$@")
+    local first_index=0
+    local last_index=$((${#group[@]} - 1))
+    local i gen is_current
+
+    for i in "${!group[@]}"; do
+      IFS='|' read -r gen is_current <<<"${group[$i]}"
+      if day_is_kept "$group_day" && (( i == first_index || i == last_index )); then
+        keep_generations+=("$gen")
+      elif [[ "$is_current" == "true" ]]; then
+        keep_generations+=("$gen")
+        current_kept_outside_policy+=("$gen")
+      else
+        delete_generations+=("$gen")
+      fi
+    done
+  }
+
+  local group_day=
+  local group=()
+  for row in "${rows[@]}"; do
+    IFS=$'\t' read -r generation day time current <<<"$row"
+    if [[ -n "$group_day" && "$day" != "$group_day" ]]; then
+      finish_group "$group_day" "${group[@]}"
+      group=()
+    fi
+    group_day="$day"
+    group+=("$generation|$current")
+  done
+  finish_group "$group_day" "${group[@]}"
+
+  echo "==> Keeping date groups: ${keep_day_list[*]}"
+  echo "==> Keeping generations: ${keep_generations[*]}"
+
+  if [[ "${#current_kept_outside_policy[@]}" -gt 0 ]]; then
+    echo "==> Current generation kept outside retention policy: ${current_kept_outside_policy[*]}"
+  fi
+
+  if [[ "${#delete_generations[@]}" -eq 0 ]]; then
+    echo "==> Nothing to delete"
+    return
+  fi
+
+  echo "==> Generations selected for deletion: ${delete_generations[*]}"
+
+  if [[ "$apply" != true ]]; then
+    echo "==> Dry-run only. Re-run with 'mynix cleanup --apply' to delete these generations."
+    return
+  fi
+
+  echo "==> Deleting selected system generations"
+  sudo nix-env --profile /nix/var/nix/profiles/system --delete-generations "${delete_generations[@]}"
+
+  echo "==> Refreshing boot entries from current system profile"
+  sudo /nix/var/nix/profiles/system/bin/switch-to-configuration boot
+
+  if [[ "$run_gc" == true ]]; then
+    echo "==> Running garbage collection"
+    sudo nix-collect-garbage
+  fi
+}
+
+case "${1:-}" in
+  update)
+    shift
+    if [[ $# -ne 0 ]]; then
+      echo "mynix: update does not accept arguments" >&2
+      usage >&2
+      exit 2
+    fi
+    update_system
+    ;;
+  cleanup)
+    shift
+    cleanup_boot_generations "$@"
+    ;;
+  -h|--help|help|"")
+    usage
+    ;;
+  *)
+    echo "mynix: unknown command: $1" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
