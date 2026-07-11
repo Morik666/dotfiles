@@ -49,14 +49,37 @@ QtObject {
             ?? DesktopEntries.heuristicLookup(appId);
     }
 
+    function appIdCandidates(appId): var {
+        const raw = String(appId ?? "");
+        if (raw.length === 0)
+            return [];
+
+        const withoutDesktop = raw.endsWith(".desktop") ? raw.slice(0, -8) : raw;
+        const shortName = reverseDomainName(withoutDesktop);
+        const candidates = [raw, withoutDesktop, shortName];
+
+        return candidates.filter((candidate, index) => candidate.length > 0 && candidates.indexOf(candidate) === index);
+    }
+
+    function aliasFor(aliases, appId): string {
+        for (const candidate of appIdCandidates(appId)) {
+            if (aliases[candidate] != null)
+                return aliases[candidate];
+
+            const lower = candidate.toLowerCase();
+            if (aliases[lower] != null)
+                return aliases[lower];
+        }
+
+        return "";
+    }
+
     function iconFor(toplevel): string {
         const appId = appIdFor(toplevel);
 
-        if (iconAliases[appId] != null)
-            return iconAliases[appId];
-
-        if (iconAliases[appId.toLowerCase()] != null)
-            return iconAliases[appId.toLowerCase()];
+        const alias = aliasFor(iconAliases, appId);
+        if (alias.length > 0)
+            return alias;
 
         const entry = desktopEntryFor(appId);
         if (entry != null && entry.icon.length > 0)
@@ -65,52 +88,58 @@ QtObject {
         return appId;
     }
 
+    function iconForEntry(entry): string {
+        if (entry == null)
+            return "application-x-executable";
+
+        const iconAlias = aliasFor(iconAliases, entry.id);
+        if (iconAlias.length > 0)
+            return iconAlias;
+
+        const entryIconAlias = aliasFor(iconAliases, entry.icon);
+        if (entryIconAlias.length > 0)
+            return entryIconAlias;
+
+        return entry.icon.length > 0 ? entry.icon : entry.id;
+    }
+
     function symbolFor(toplevel): string {
         const appId = appIdFor(toplevel);
 
-        if (symbolAliases[appId] != null)
-            return symbolAliases[appId];
+        return aliasFor(symbolAliases, appId);
+    }
 
-        if (symbolAliases[appId.toLowerCase()] != null)
-            return symbolAliases[appId.toLowerCase()];
+    function symbolForEntry(entry): string {
+        if (entry == null)
+            return "";
 
-        const shortName = reverseDomainName(appId).toLowerCase();
-        if (symbolAliases[shortName] != null)
-            return symbolAliases[shortName];
-
-        return "";
+        return aliasFor(symbolAliases, entry.id) || aliasFor(symbolAliases, entry.icon);
     }
 
     function sourceFor(toplevel): string {
         const appId = appIdFor(toplevel);
 
-        if (sourceAliases[appId] != null)
-            return sourceAliases[appId];
+        return aliasFor(sourceAliases, appId);
+    }
 
-        if (sourceAliases[appId.toLowerCase()] != null)
-            return sourceAliases[appId.toLowerCase()];
+    function sourceForEntry(entry): string {
+        if (entry == null)
+            return "";
 
-        const shortName = reverseDomainName(appId).toLowerCase();
-        if (sourceAliases[shortName] != null)
-            return sourceAliases[shortName];
-
-        return "";
+        return aliasFor(sourceAliases, entry.id) || aliasFor(sourceAliases, entry.icon);
     }
 
     function shapeFor(toplevel): string {
         const appId = appIdFor(toplevel);
 
-        if (shapeAliases[appId] != null)
-            return shapeAliases[appId];
+        return aliasFor(shapeAliases, appId);
+    }
 
-        if (shapeAliases[appId.toLowerCase()] != null)
-            return shapeAliases[appId.toLowerCase()];
+    function shapeForEntry(entry): string {
+        if (entry == null)
+            return "";
 
-        const shortName = reverseDomainName(appId).toLowerCase();
-        if (shapeAliases[shortName] != null)
-            return shapeAliases[shortName];
-
-        return "";
+        return aliasFor(shapeAliases, entry.id) || aliasFor(shapeAliases, entry.icon);
     }
 
     function reverseDomainName(appId): string {

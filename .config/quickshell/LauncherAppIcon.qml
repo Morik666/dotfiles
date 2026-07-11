@@ -23,16 +23,16 @@ Item {
     readonly property string mode: {
         if (sourceOverride.toString().length > 0)
             return "image";
+        if (shape === "zen")
+            return "zen";
+        if (symbol.length > 0)
+            return "symbol";
         if (symbolic.length > 0 && !Quickshell.hasThemeIcon(symbolic))
             return "localSymbolic";
         if (symbolic.length > 0 && Quickshell.hasThemeIcon(symbolic))
             return "themeSymbolic";
         if (resolvedIcon.length > 0)
             return "themeIcon";
-        if (shape === "zen")
-            return "zen";
-        if (symbol.length > 0)
-            return "symbol";
         return "placeholder";
     }
 
