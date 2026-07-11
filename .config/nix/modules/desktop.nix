@@ -6,7 +6,6 @@
     enable = true;
     shellInit = ''
         fish_config theme choose "everforest-hard" &
-        starship init fish | source
       '';
   };
   programs.steam.enable = true;
