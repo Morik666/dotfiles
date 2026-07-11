@@ -6,27 +6,33 @@ import Quickshell.Widgets
 Item {
     id: root
 
-    property int size: 18
+    property int size: 28
     property color color: "#d3c6aa"
     property string symbol: ""
     property string shape: ""
+    property string symbolic: ""
     property url sourceOverride: ""
     property string regularIcon: "application-x-executable"
     property string fallbackIcon: "application-x-executable"
-    property string debugName: regularIcon
-    property bool preferCustomIcon: false
     property string resolvedIcon: resolveIcon(regularIcon)
 
     implicitWidth: size
     implicitHeight: size
 
+    readonly property url localSymbolicSource: symbolic.length > 0 ? Qt.resolvedUrl(`assets/icons/${symbolic}.svg`) : ""
     readonly property string mode: {
-        if (preferCustomIcon && symbol.length > 0)
-            return "symbol";
-        if (preferCustomIcon && shape === "zen")
-            return "zen";
+        if (sourceOverride.toString().length > 0)
+            return "image";
+        if (symbolic.length > 0 && !Quickshell.hasThemeIcon(symbolic))
+            return "localSymbolic";
+        if (symbolic.length > 0 && Quickshell.hasThemeIcon(symbolic))
+            return "themeSymbolic";
         if (resolvedIcon.length > 0)
             return "themeIcon";
+        if (shape === "zen")
+            return "zen";
+        if (symbol.length > 0)
+            return "symbol";
         return "placeholder";
     }
 
@@ -55,6 +61,23 @@ Item {
         visible: root.mode === "themeIcon"
         implicitSize: root.size
         source: root.resolvedIcon
+    }
+
+    IconImage {
+        anchors.fill: parent
+        visible: root.mode === "themeSymbolic"
+        implicitSize: root.size
+        source: Quickshell.iconPath(root.symbolic)
+    }
+
+    Image {
+        anchors.fill: parent
+        visible: root.mode === "image" || root.mode === "localSymbolic"
+        source: root.mode === "image" ? root.sourceOverride : root.localSymbolicSource
+        fillMode: Image.PreserveAspectFit
+        smooth: true
+        sourceSize.width: root.size
+        sourceSize.height: root.size
     }
 
     Text {

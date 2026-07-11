@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Pipewire
+import Quickshell.Wayland
 import Quickshell.Widgets
 
 ShellRoot {
@@ -14,9 +15,73 @@ ShellRoot {
     readonly property color fg: "#d3c6aa"
     readonly property color green: "#a7c080"
     readonly property string fontFamily: "ComicShannsMono Nerd Font"
+    property bool rightSidebarOpen: false
+    property int rightSidebarInitialTab: 1
+    property bool launcherOpen: false
+
+    function openRightSidebar(tab: int): void {
+        rightSidebarInitialTab = tab;
+        rightSidebarOpen = true;
+        if (tab === 0)
+            notificationService.markAllRead();
+    }
+
+    IpcHandler {
+        target: "launcher"
+
+        function toggle(): void {
+            root.launcherOpen = !root.launcherOpen;
+        }
+
+        function open(): void {
+            root.launcherOpen = true;
+        }
+
+        function close(): void {
+            root.launcherOpen = false;
+        }
+    }
+
+    NotificationService {
+        id: notificationService
+        sidebarOpen: root.rightSidebarOpen
+    }
 
     OpenPrograms {
         id: openPrograms
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        PanelWindow {
+            required property var modelData
+
+            screen: modelData
+            visible: root.launcherOpen
+            color: "transparent"
+            exclusiveZone: 0
+            WlrLayershell.keyboardFocus: root.launcherOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+
+            anchors {
+                left: true
+                top: true
+                right: true
+                bottom: true
+            }
+
+            Launcher {
+                anchors.fill: parent
+                open: root.launcherOpen
+                openPrograms: openPrograms
+                bg0: root.bg0
+                bg5: root.bg5
+                fg: root.fg
+                green: root.green
+                fontFamily: root.fontFamily
+                onCloseRequested: root.launcherOpen = false
+            }
+        }
     }
 
     Variants {
@@ -51,6 +116,8 @@ ShellRoot {
                         text: ""
                         leftPadding: 15
                         rightPadding: 21
+                        clickable: true
+                        onClicked: root.launcherOpen = !root.launcherOpen
                     }
 
                     RowLayout {
@@ -99,7 +166,7 @@ ShellRoot {
                                     Repeater {
                                         model: workspaceItem.windows
 
-                                        SymbolicAppIcon {
+                                        BarAppIcon {
                                             required property HyprlandToplevel modelData
 
                                             size: 22
@@ -108,7 +175,6 @@ ShellRoot {
                                             shape: openPrograms.shapeFor(modelData)
                                             sourceOverride: openPrograms.sourceFor(modelData)
                                             regularIcon: openPrograms.iconFor(modelData)
-                                            symbolicIcons: openPrograms.symbolicIconsFor(modelData)
                                         }
                                     }
                                 }
@@ -122,13 +188,6 @@ ShellRoot {
 
                     Item {
                         Layout.fillWidth: true
-                    }
-
-                    CommandWidget {
-                        icon: ""
-                        command: "brightnessctl -m 2>/dev/null | awk -F, '{gsub(/%/, \"\", $4); print $4 \"%\"}'"
-                        fallback: "0%"
-                        interval: 60000
                     }
 
                     StatusWidget {
@@ -170,21 +229,97 @@ ShellRoot {
                         interval: 60000
                     }
 
-                    StatusWidget {
-                        text: Qt.formatDateTime(clock.date, "HH:mm")
-
-                        SystemClock {
-                            id: clock
-                            precision: SystemClock.Minutes
-                        }
-                    }
-
                     CommandWidget {
                         command: "hyprctl devices 2>/dev/null | awk -F': ' '/active keymap/ {v=tolower($2); if (v ~ /ukrainian|ua/) print \"ua\"; else print \"en\"; exit}'"
                         fallback: "en"
                         interval: 2000
                     }
+
+                    BarStatusGroup {
+                        notifications: notificationService.unread
+                        onCalendarClicked: root.openRightSidebar(1)
+                        onNotificationsClicked: root.openRightSidebar(0)
+                    }
                 }
+            }
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        PanelWindow {
+            id: rightSidebarWindow
+            required property var modelData
+
+            screen: modelData
+            visible: root.rightSidebarOpen
+            color: "transparent"
+            exclusiveZone: 0
+
+            anchors {
+                left: true
+                top: true
+                right: true
+                bottom: true
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: root.rightSidebarOpen = false
+            }
+
+            Item {
+                anchors {
+                    top: parent.top
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+                width: sidebar.implicitWidth
+
+                MouseArea {
+                    anchors.fill: parent
+                }
+
+                RightSidebar {
+                    id: sidebar
+                    anchors.fill: parent
+                    open: root.rightSidebarOpen
+                    initialTab: root.rightSidebarInitialTab
+                    notificationService: notificationService
+                    onCloseRequested: root.rightSidebarOpen = false
+                }
+            }
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        PanelWindow {
+            required property var modelData
+
+            screen: modelData
+            visible: notificationService.popupList.length > 0
+            color: "transparent"
+            implicitWidth: 360
+            implicitHeight: popupStack.implicitHeight
+            exclusiveZone: 0
+
+            anchors {
+                top: true
+                right: true
+            }
+
+            margins {
+                top: 42
+                right: 12
+            }
+
+            NotificationPopupStack {
+                id: popupStack
+                anchors.fill: parent
+                notificationService: notificationService
             }
         }
     }

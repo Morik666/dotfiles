@@ -6,6 +6,9 @@ Item {
     property alias text: label.text
     property int leftPadding: 2
     property int rightPadding: 2
+    property bool clickable: false
+
+    signal clicked()
 
     readonly property color fg: "#d3c6aa"
     readonly property color green: "#a7c080"
@@ -36,5 +39,12 @@ Item {
         anchors.bottom: parent.bottom
         height: 2
         color: root.green
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        enabled: root.clickable
+        cursorShape: Qt.PointingHandCursor
+        onClicked: root.clicked()
     }
 }

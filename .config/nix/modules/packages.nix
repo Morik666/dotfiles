@@ -58,6 +58,7 @@ in
     wget
     htop
     socat
+    ripgrep
     # neofetch
     fastfetch
     starship

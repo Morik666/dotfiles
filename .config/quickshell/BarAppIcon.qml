@@ -13,17 +13,17 @@ Item {
     property url sourceOverride: ""
     property string regularIcon: "application-x-executable"
     property string fallbackIcon: "application-x-executable"
-    property string debugName: regularIcon
-    property bool preferCustomIcon: false
     property string resolvedIcon: resolveIcon(regularIcon)
 
     implicitWidth: size
     implicitHeight: size
 
     readonly property string mode: {
-        if (preferCustomIcon && symbol.length > 0)
+        if (sourceOverride.toString().length > 0)
+            return "image";
+        if (symbol.length > 0)
             return "symbol";
-        if (preferCustomIcon && shape === "zen")
+        if (shape === "zen")
             return "zen";
         if (resolvedIcon.length > 0)
             return "themeIcon";
@@ -55,6 +55,16 @@ Item {
         visible: root.mode === "themeIcon"
         implicitSize: root.size
         source: root.resolvedIcon
+    }
+
+    Image {
+        anchors.fill: parent
+        visible: root.mode === "image"
+        source: root.sourceOverride
+        fillMode: Image.PreserveAspectFit
+        smooth: true
+        sourceSize.width: root.size
+        sourceSize.height: root.size
     }
 
     Text {

@@ -113,33 +113,6 @@ QtObject {
         return "";
     }
 
-    function symbolicIconsFor(toplevel): list<string> {
-        const appId = appIdFor(toplevel);
-        const regularIcon = iconFor(toplevel);
-        const entry = desktopEntryFor(appId);
-        const icons = [];
-
-        addSymbolicCandidate(icons, regularIcon);
-
-        if (entry != null && entry.icon.length > 0)
-            addSymbolicCandidate(icons, entry.icon);
-
-        addSymbolicCandidate(icons, appId);
-        addSymbolicCandidate(icons, appId.toLowerCase());
-        addSymbolicCandidate(icons, reverseDomainName(appId));
-
-        return icons;
-    }
-
-    function addSymbolicCandidate(icons, iconName): void {
-        if (iconName == null || iconName.length === 0)
-            return;
-
-        const symbolic = iconName.endsWith("-symbolic") ? iconName : `${iconName}-symbolic`;
-        if (icons.indexOf(symbolic) === -1)
-            icons.push(symbolic);
-    }
-
     function reverseDomainName(appId): string {
         if (appId == null || appId.length === 0)
             return "";
