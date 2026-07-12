@@ -1,0 +1,31 @@
+[shell]
+time_format = "{:%H:%M}"
+date_format = "%A, %x"
+telemetry_enabled = false
+setup_wizard_enabled = false
+clipboard_enabled = true
+launch_apps_as_systemd_services = false
+
+[theme]
+mode = "dark"
+source = "wallpaper"
+wallpaper_scheme = "m3-content"
+
+[theme.templates]
+enable_builtin_templates = true
+enable_community_templates = false
+builtin_ids = []
+community_ids = []
+
+[wallpaper]
+enabled = true
+fill_mode = "crop"
+fill_color = "#111111"
+transition = ["fade", "wipe", "zoom"]
+transition_duration = 1200
+edge_smoothness = 0.3
+transition_on_startup = false
+directory = "/home/jarves/Downloads/everforest-walls-main/selected-wals"
+
+[wallpaper.default]
+path = "/home/jarves/Downloads/everforest-walls-main/selected-wals/mantis_side.jpg"

@@ -2,12 +2,7 @@
 
 {
   programs.hyprland.enable = true;
-  programs.fish = {
-    enable = true;
-    shellInit = ''
-        fish_config theme choose "everforest-hard" &
-      '';
-  };
+  programs.fish.enable = true;
   programs.steam.enable = true;
   # services.displayManager.cosmic-greeter.enable = true;
   # services.desktopManager.cosmic.enable = true;
