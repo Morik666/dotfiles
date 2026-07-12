@@ -1,6 +1,8 @@
 #auto-format = false
 #preview-completion-insert = false
 
+theme = "noctalia"
+
 [editor]
 bufferline = "always"
 

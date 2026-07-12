@@ -59,6 +59,7 @@
     #hyprlauncher  #app louncher
 
     discord
+    vesktop
 
     #gparted
     gnome-disk-utility

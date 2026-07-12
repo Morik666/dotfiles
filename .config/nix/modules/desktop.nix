@@ -23,8 +23,10 @@
   #xdg.porta.extraPortals = [pkgs.xdg-desctop-portal-gtk ];
 
   environment.loginShellInit = ''
-    if [ "$(tty)" = "/dev/tty1" ]; then
-      Hyprland
+    if [ "''${XDG_VTNR:-}" = "1" ] \
+      && [ -z "''${WAYLAND_DISPLAY:-}" ] \
+      && [ -z "''${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+      exec start-hyprland
     fi
   '';
 }
