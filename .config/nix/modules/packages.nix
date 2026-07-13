@@ -51,14 +51,18 @@
     # }
 
     nemo
+    mpv
+    simple-scan
 
     inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default
+    hyprlandPlugins.hyprspace
 
     # eww #widgets
 
     #hyprlauncher  #app louncher
 
     discord
+    whatsie
     vesktop
 
     #gparted

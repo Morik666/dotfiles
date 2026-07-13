@@ -1,7 +1,11 @@
-{ ... }:
+{ pkgs, ... }:
 
 {
-  programs.hyprland.enable = true;
+  programs.hyprland = {
+    enable = true;
+    package = pkgs.hyprland;
+    portalPackage = pkgs.xdg-desktop-portal-hyprland;
+  };
   programs.fish.enable = true;
   programs.steam.enable = true;
   # services.displayManager.cosmic-greeter.enable = true;
@@ -10,6 +14,16 @@
   services.devmon.enable = true;
   services.gvfs.enable = true;
   services.udisks2.enable = true;
+
+  hardware.sane = {
+    enable = true;
+    extraBackends = [ pkgs.hplipWithPlugin ];
+  };
+
+  services.printing = {
+    enable = true;
+    drivers = [ pkgs.hplipWithPlugin ];
+  };
 
   environment.etc."xdg/mimeapps.list".text = ''
     [Default Applications]

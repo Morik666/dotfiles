@@ -1,7 +1,11 @@
 { pkgs, ... }:
 
 {
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings = {
+    experimental-features = [ "nix-command" "flakes" ];
+    max-jobs = 1;
+    cores = 4;
+  };
 
   users.defaultUserShell = pkgs.fish;
 
@@ -69,7 +73,7 @@
   users.users.jarves = {
     isNormalUser = true;
     description = "jarves";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "scanner" "lp" ];
     packages = [ ];
   };
 
