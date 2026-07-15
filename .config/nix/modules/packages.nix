@@ -14,6 +14,7 @@
     brightnessctl
     playerctl
     cliphist
+    flameshot
     ddcutil
     bluez
     stow
@@ -51,6 +52,12 @@
     # }
 
     nemo
+    kdePackages.dolphin
+    kdePackages.breeze-icons
+    kdePackages.gwenview
+    kdePackages.okular
+    qt6Packages.qt6ct
+    libreoffice-qt6-fresh
     mpv
     simple-scan
 
@@ -62,6 +69,7 @@
     #hyprlauncher  #app louncher
 
     discord
+    protonmail-desktop
     whatsie
     vesktop
 

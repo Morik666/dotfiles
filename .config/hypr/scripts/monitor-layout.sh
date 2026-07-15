@@ -3,6 +3,8 @@
 set -eu
 
 external_desc="Samsung Electric Company LF24T450F HK2R900537"
+external_mode="1920x1080@60"
+external_scale="1"
 laptop_monitor="eDP-1"
 laptop_mode="2560x1600@165"
 laptop_position="0x0"
@@ -113,6 +115,46 @@ focus_monitor() {
     hyprctl dispatch focusmonitor "$monitor" >/dev/null 2>&1 || true
 }
 
+external_transform() {
+    monitor="$1"
+
+    hyprctl monitors all | awk -v wanted="$monitor" '
+        $1 == "Monitor" {
+            current = $2
+            sub(/:.*/, "", current)
+        }
+        current == wanted && $1 == "transform:" {
+            print $2
+            exit
+        }
+    '
+}
+
+toggle_external_rotation() {
+    monitor="$(external_monitor_name)"
+
+    if [ -z "$monitor" ]; then
+        notify-send "Monitor rotation" "External monitor is not connected"
+        return 1
+    fi
+
+    transform="$(external_transform "$monitor")"
+
+    if [ "$transform" = "0" ]; then
+        hyprctl keyword monitor "$monitor,$external_mode,-1080x0,$external_scale,transform,3" >/dev/null
+        orientation="Portrait"
+    else
+        hyprctl keyword monitor "$monitor,$external_mode,-1920x0,$external_scale,transform,0" >/dev/null
+        orientation="Landscape"
+    fi
+
+    sleep 1
+    pkill -x .noctalia-wrapp 2>/dev/null || true
+    noctalia --daemon
+
+    notify-send "Monitor rotation" "$orientation mode"
+}
+
 place_for_open_lid() {
     external_monitor="$(external_monitor_name)"
 
@@ -177,8 +219,11 @@ case "${1:-}" in
             place_for_open_lid
         fi
         ;;
+    rotate-external)
+        toggle_external_rotation
+        ;;
     *)
-        echo "usage: $0 lid-close|lid-open|monitor-added|monitor-removed|sync" >&2
+        echo "usage: $0 lid-close|lid-open|monitor-added|monitor-removed|sync|rotate-external" >&2
         exit 2
         ;;
 esac

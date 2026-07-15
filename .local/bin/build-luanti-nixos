@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source_dir="${LUANTI_SOURCE:-$HOME/Projects/CodingMantis/luanti}"
+build_dir="${LUANTI_BUILD_DIR:-$source_dir/build-nixos}"
+
+if [[ "${1:-}" != "--inside-nix-shell" ]]; then
+  if [[ "${1:-}" == "--clean" ]]; then
+    rm -rf -- "$build_dir"
+  elif [[ $# -ne 0 ]]; then
+    echo "Usage: build-luanti-nixos [--clean]" >&2
+    exit 2
+  fi
+
+  printf -v command 'LUANTI_SOURCE=%q LUANTI_BUILD_DIR=%q %q --inside-nix-shell' \
+    "$source_dir" "$build_dir" "$0"
+
+  exec nix-shell --pure \
+    -p bash gcc cmake pkg-config \
+       zlib zstd libjpeg libpng libGL libGLU \
+       luajit SDL2 openal curl libvorbis libogg \
+       gettext gmp freetype sqlite jsoncpp openssl \
+    --run "$command"
+fi
+
+if [[ ! -f "$source_dir/CMakeLists.txt" ]]; then
+  echo "build-luanti-nixos: Luanti source not found at $source_dir" >&2
+  exit 1
+fi
+
+# An earlier in-tree build leaves these generated headers in src/. Luanti's
+# CMake configuration intentionally rejects out-of-tree builds while they
+# exist because they would override the headers generated in build-nixos.
+rm -f -- \
+  "$source_dir/src/cmake_config.h" \
+  "$source_dir/src/cmake_config_githash.h"
+
+jobs="${LUANTI_BUILD_JOBS:-$(nproc)}"
+
+echo "==> Configuring Luanti in $build_dir"
+cmake -S "$source_dir" -B "$build_dir" \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DRUN_IN_PLACE=TRUE
+
+echo "==> Building Luanti with $jobs jobs"
+cmake --build "$build_dir" --parallel "$jobs"
+
+echo "==> Built $build_dir/bin/luanti"

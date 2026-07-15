@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Luanti (Development Build)
+Comment=Launch the locally built Luanti client
+Exec=/home/jarves/Projects/CodingMantis/luanti/build-nixos/bin/luanti
+Icon=/home/jarves/Projects/CodingMantis/luanti/misc/luanti.svg
+Terminal=false
+Categories=Game;Simulation;
+StartupNotify=false
+StartupWMClass=luanti
+Keywords=luanti;minetest;sandbox;blocks;development;
