@@ -2,7 +2,7 @@
 Type=Application
 Name=Luanti (Development Build)
 Comment=Launch the locally built Luanti client
-Exec=/home/jarves/Projects/CodingMantis/luanti/build-nixos/bin/luanti
+Exec=/home/jarves/Projects/CodingMantis/luanti/bin/luanti
 Icon=/home/jarves/Projects/CodingMantis/luanti/misc/luanti.svg
 Terminal=false
 Categories=Game;Simulation;

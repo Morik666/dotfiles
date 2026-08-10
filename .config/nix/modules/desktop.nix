@@ -28,6 +28,12 @@
     drivers = [ pkgs.hplipWithPlugin ];
   };
 
+  qt = {
+    enable = true;
+    platformTheme = "kde";
+    style = "breeze";
+  };
+
   environment.etc."xdg/mimeapps.list".text = ''
     [Default Applications]
     x-scheme-handler/http=zen-beta.desktop

@@ -37,6 +37,9 @@ insert = "bar"
 "C-l" = "jump_view_right"
 "C-h" = "jump_view_left"
 
+[keys.normal.space]
+B = ":buffer-close"
+
 [keys.insert]
 "A-x" = "normal_mode"  # Maps Alt-X to enter normal mode
 j = { k = "normal_mode" }  # Maps `jk` to exit insert mode

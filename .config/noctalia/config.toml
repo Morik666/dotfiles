@@ -14,7 +14,7 @@ wallpaper_scheme = "m3-content"
 [theme.templates]
 enable_builtin_templates = true
 enable_community_templates = false
-builtin_ids = []
+builtin_ids = ["gtk3", "gtk4", "ghostty", "helix", "kcolorscheme", "qt"]
 community_ids = []
 
 [wallpaper]

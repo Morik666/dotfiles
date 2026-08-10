@@ -25,6 +25,7 @@
     zip
     gzip
     unzip
+    unrar
     wget
     htop
     socat
@@ -32,9 +33,10 @@
     # neofetch
     fastfetch
     starship
+    dig
+    
     herdr
     inputs.nixpkgs-codex.legacyPackages.${pkgs.stdenv.hostPlatform.system}.codex
-
     lazygit
     vim
     helix
@@ -52,14 +54,15 @@
     # }
 
     nemo
+    kdePackages.ark
     kdePackages.dolphin
     kdePackages.breeze-icons
     kdePackages.gwenview
     kdePackages.okular
-    qt6Packages.qt6ct
     libreoffice-qt6-fresh
     mpv
     simple-scan
+    geeqie
 
     inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default
     hyprlandPlugins.hyprspace
@@ -68,7 +71,10 @@
 
     #hyprlauncher  #app louncher
 
-    discord
+    (discord.override {
+      commandLineArgs = "--ozone-platform=wayland";
+    })
+    telegram-desktop
     protonmail-desktop
     whatsie
     vesktop
@@ -78,5 +84,8 @@
     file-roller
     pavucontrol
     pulseaudioFull
+
+    blockbench
+    libresprite
   ];
 }

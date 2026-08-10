@@ -45,4 +45,4 @@ cmake -S "$source_dir" -B "$build_dir" \
 echo "==> Building Luanti with $jobs jobs"
 cmake --build "$build_dir" --parallel "$jobs"
 
-echo "==> Built $build_dir/bin/luanti"
+echo "==> Built $source_dir/bin/luanti"
