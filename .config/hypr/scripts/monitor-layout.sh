@@ -102,11 +102,11 @@ move_unpinned_workspaces_to_monitor() {
 }
 
 enable_laptop_monitor() {
-    hyprctl keyword monitor "$laptop_monitor, $laptop_mode, $laptop_position, $laptop_scale" >/dev/null
+    hyprctl eval "hl.monitor({output = '$laptop_monitor', mode = '$laptop_mode', position = '$laptop_position', scale = $laptop_scale, disabled = false})" >/dev/null
 }
 
 disable_laptop_monitor() {
-    hyprctl keyword monitor "$laptop_monitor, disable" >/dev/null
+    hyprctl eval "hl.monitor({output = '$laptop_monitor', disabled = true})" >/dev/null
 }
 
 focus_monitor() {
@@ -140,11 +140,12 @@ toggle_external_rotation() {
 
     transform="$(external_transform "$monitor")"
 
+    # Use the configured description instead of interpolating a detected output name into Lua.
     if [ "$transform" = "0" ]; then
-        hyprctl keyword monitor "$monitor,$external_mode,-1080x0,$external_scale,transform,3" >/dev/null
+        hyprctl eval "hl.monitor({output = 'desc:$external_desc', mode = '$external_mode', position = '-1080x0', scale = $external_scale, transform = 3})" >/dev/null
         orientation="Portrait"
     else
-        hyprctl keyword monitor "$monitor,$external_mode,-1920x0,$external_scale,transform,0" >/dev/null
+        hyprctl eval "hl.monitor({output = 'desc:$external_desc', mode = '$external_mode', position = '-1920x0', scale = $external_scale, transform = 0})" >/dev/null
         orientation="Landscape"
     fi
 

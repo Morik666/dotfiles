@@ -3,17 +3,23 @@
 {
   programs.hyprland = {
     enable = true;
+    withUWSM = true;
     package = pkgs.hyprland;
     portalPackage = pkgs.xdg-desktop-portal-hyprland;
   };
   programs.fish.enable = true;
   programs.steam.enable = true;
+  programs.kdeconnect.enable = true;
   # services.displayManager.cosmic-greeter.enable = true;
   # services.desktopManager.cosmic.enable = true;
   services.blueman.enable = true;
   services.devmon.enable = true;
   services.gvfs.enable = true;
   services.udisks2.enable = true;
+  services.avahi = {
+    enable = true;
+    nssmdns4 = true;
+  };
 
   hardware.sane = {
     enable = true;
@@ -26,6 +32,7 @@
   services.printing = {
     enable = true;
     drivers = [ pkgs.hplipWithPlugin ];
+    browsed.enable = true;
   };
 
   qt = {
@@ -109,11 +116,24 @@
   #xdg.portal.enable = true;
   #xdg.porta.extraPortals = [pkgs.xdg-desctop-portal-gtk ];
 
-  environment.loginShellInit = ''
+  # Fish runs environment.loginShellInit through a non-login Bash subprocess.
+  # Launch from the actual login shell so UWSM can validate and own the session.
+  programs.fish.loginShellInit = ''
+    if status is-interactive; and status is-login
+      if test "$XDG_VTNR" = 1; and not set -q WAYLAND_DISPLAY; and not set -q HYPRLAND_INSTANCE_SIGNATURE
+        if uwsm check may-start
+          exec uwsm start -- hyprland.desktop
+        end
+      end
+    end
+  '';
+
+  programs.bash.loginShellInit = ''
     if [ "''${XDG_VTNR:-}" = "1" ] \
       && [ -z "''${WAYLAND_DISPLAY:-}" ] \
-      && [ -z "''${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
-      exec start-hyprland
+      && [ -z "''${HYPRLAND_INSTANCE_SIGNATURE:-}" ] \
+      && uwsm check may-start; then
+      exec uwsm start -- hyprland.desktop
     fi
   '';
 }

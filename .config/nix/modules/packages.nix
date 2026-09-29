@@ -19,7 +19,9 @@
     bluez
     stow
     zoxide
-    python3
+    (python3.withPackages (pythonPackages: with pythonPackages; [
+      requests
+    ]))
 
     git
     zip
@@ -40,9 +42,14 @@
     lazygit
     vim
     helix
+    lua-language-server
+    stylua
+    ruff
     yazi
     # kitty
     ghostty
+    remmina
+    filezilla
 
     firefox
     inputs.zen-browser.packages.x86_64-linux.default
@@ -59,13 +66,18 @@
     kdePackages.breeze-icons
     kdePackages.gwenview
     kdePackages.okular
-    libreoffice-qt6-fresh
+    libreoffice-qt-stable
     mpv
     simple-scan
-    geeqie
+    # geeqie
+
+    adw-gtk3
+    glib
+    nwg-look
 
     inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default
-    hyprlandPlugins.hyprspace
+    # Disabled until Hyprspace supports Hyprland 0.56.
+    # hyprlandPlugins.hyprspace
 
     # eww #widgets
 

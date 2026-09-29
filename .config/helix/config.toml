@@ -36,6 +36,7 @@ insert = "bar"
 "C-t" = ":buffer-next"
 "C-l" = "jump_view_right"
 "C-h" = "jump_view_left"
+"C-g" = [":new", ":insert-output lazygit", ":buffer-close!", ":redraw"]
 
 [keys.normal.space]
 B = ":buffer-close"
