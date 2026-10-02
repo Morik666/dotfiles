@@ -46,7 +46,7 @@ Commands:
   update        Update flake inputs and switch to the new system.
   install       Switch to the current flake without updating inputs.
   stow          Symlink dotfiles from ~/.dotfiles into ~.
-  cleanup       Review and clean old NixOS boot generations.
+  cleanup       Prune old NixOS boot generations and collect garbage.
 """
 
 
@@ -219,25 +219,23 @@ def prompt_cleanup_action() -> str:
         return "cancel"
 
     print("\nOptions:")
-    print("  1. apply")
-    print("  2. apply and collect garbage")
-    print("  3. cancel")
+    print("  1. apply and collect garbage")
+    print("  2. cancel")
 
     while True:
-        choice = input("Choose [1/2/3, default 3]: ").strip().lower()
-        if choice in {"", "3", "c", "cancel"}:
+        choice = input("Choose [1/2, default 2]: ").strip().lower()
+        if choice in {"", "2", "c", "cancel"}:
             return "cancel"
-        if choice in {"1", "a", "apply"}:
+        if choice in {"1", "a", "apply", "g", "gc", "garbage", "apply and collect garbage"}:
             return "apply"
-        if choice in {"2", "g", "gc", "garbage", "apply and collect garbage"}:
-            return "apply-gc"
-        print("mantix: choose 1, 2, or 3")
+        print("mantix: choose 1 or 2")
 
 
 def cleanup_boot_generations(_args: argparse.Namespace) -> None:
     require_command("nixos-rebuild")
     require_command("nix-env")
     require_command("sudo")
+    require_command("nix-collect-garbage")
 
     generations = list_generations()
     if not generations:
@@ -246,25 +244,21 @@ def cleanup_boot_generations(_args: argparse.Namespace) -> None:
     keep, delete, current_kept_outside_policy, kept_days = select_generations(generations)
     print_generation_table(generations, keep, delete, current_kept_outside_policy, kept_days)
 
-    if not delete:
-        return
-
     action = prompt_cleanup_action()
     if action == "cancel":
         print("==> Canceled")
         return
 
-    delete_args = [str(item) for item in sorted(delete)]
-    print("==> Deleting selected system generations")
-    run(["sudo", "nix-env", "--profile", SYSTEM_PROFILE, "--delete-generations", *delete_args])
+    if delete:
+        delete_args = [str(item) for item in sorted(delete)]
+        print("==> Deleting selected system generations")
+        run(["sudo", "nix-env", "--profile", SYSTEM_PROFILE, "--delete-generations", *delete_args])
 
-    print("==> Refreshing boot entries from current system profile")
-    run(["sudo", f"{SYSTEM_PROFILE}/bin/switch-to-configuration", "boot"])
+        print("==> Refreshing boot entries from current system profile")
+        run(["sudo", f"{SYSTEM_PROFILE}/bin/switch-to-configuration", "boot"])
 
-    if action == "apply-gc":
-        require_command("nix-collect-garbage")
-        print("==> Running garbage collection")
-        run(["sudo", "nix-collect-garbage"])
+    print("==> Running garbage collection")
+    run(["sudo", "nix-collect-garbage"])
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -285,7 +279,7 @@ def build_parser() -> argparse.ArgumentParser:
     stow = subparsers.add_parser("stow", help="symlink dotfiles into $HOME")
     stow.set_defaults(func=stow_dotfiles)
 
-    cleanup = subparsers.add_parser("cleanup", help="review and clean old boot generations")
+    cleanup = subparsers.add_parser("cleanup", help="prune old boot generations and collect garbage")
     cleanup.set_defaults(func=cleanup_boot_generations)
 
     return parser

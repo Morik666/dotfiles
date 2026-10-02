@@ -14,6 +14,7 @@
     brightnessctl
     playerctl
     cliphist
+    wl-clipboard
     flameshot
     ddcutil
     bluez
@@ -46,6 +47,7 @@
     stylua
     ruff
     yazi
+    superfile
     # kitty
     ghostty
     remmina
