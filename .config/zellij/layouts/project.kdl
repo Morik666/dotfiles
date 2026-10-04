@@ -1,0 +1,20 @@
+layout {
+    tab name="project" split_direction="horizontal" {
+        pane size="50%" stacked=true {
+            pane name="codex" command="codex" expanded=true
+            pane name="terminal"
+        }
+        pane name="helix" command="hx" size="50%" focus=true
+    }
+    swap_tiled_layout name="portrait" {
+        tab {
+            pane size="50%" stacked=true { children; }
+            pane name="helix" command="hx" size="50%"
+        }
+    }
+    swap_tiled_layout name="laptop" {
+        tab {
+            pane stacked=true { children; }
+        }
+    }
+}

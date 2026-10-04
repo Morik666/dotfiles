@@ -33,6 +33,7 @@ skip-levels = 1
 insert = "bar"
 
 [keys.normal]
+"A-E" = "move_parent_node_end"
 "C-t" = ":buffer-next"
 "C-l" = "jump_view_right"
 "C-h" = "jump_view_left"
@@ -40,6 +41,11 @@ insert = "bar"
 
 [keys.normal.space]
 B = ":buffer-close"
+# Copy the current file's absolute path to the Wayland clipboard.
+L = ":sh realpath -m -s -- '%{buffer_name}' | wl-copy --trim-newline"
+
+[keys.select]
+"A-E" = "move_parent_node_end"
 
 [keys.insert]
 "A-x" = "normal_mode"  # Maps Alt-X to enter normal mode

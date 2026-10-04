@@ -38,7 +38,7 @@
     starship
     dig
     
-    herdr
+    zellij
     inputs.nixpkgs-codex.legacyPackages.${pkgs.stdenv.hostPlatform.system}.codex
     lazygit
     vim

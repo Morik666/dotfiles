@@ -1,0 +1,239 @@
+#!/usr/bin/env python3
+"""Project Zellij sessions and tool navigation. See ~/.config/zellij/README.md."""
+import argparse
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import time
+
+SCRIPT = Path(__file__).resolve()
+CONFIG = SCRIPT.parents[2] / '.config/zellij'
+
+
+def project_session(cwd):
+    """Remember readable names per absolute path, including legacy sessions."""
+    state = Path(os.environ.get('XDG_STATE_HOME', str(Path.home() / '.local/state'))) / 'zl'
+    state.mkdir(parents=True, exist_ok=True)
+    with (state / 'sessions.lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        registry = state / 'sessions.json'
+        names = json.loads(registry.read_text()) if registry.exists() else {}
+        path = str(cwd)
+        if path in names:
+            return names[path]
+        result = subprocess.run(['zellij', 'list-sessions', '--short', '--no-formatting'],
+                                capture_output=True, text=True, timeout=15)
+        if result.returncode and 'No active zellij sessions' not in result.stderr + result.stdout:
+            raise RuntimeError(result.stderr.strip() or result.stdout.strip())
+        existing = set(result.stdout.splitlines()) if result.returncode == 0 else set()
+        base = ''.join(c if c.isprintable() and c not in '/\\' else '_' for c in cwd.name) or 'root'
+        if base in ('.', '..'):
+            base = 'project'
+        # Leave room for the Unix socket directory and a collision suffix.
+        while len(os.fsencode(base)) > 48:
+            base = base[:-1]
+        name = base
+        taken = existing | set(names.values())
+        suffix = 2
+        while name in taken:
+            name = f'{base}-{suffix}'
+            suffix += 1
+        legacy = 'zl-' + hashlib.sha256(os.fsencode(cwd)).hexdigest()[:16]
+        if legacy in existing:
+            renamed = subprocess.run(['zellij', '--session', legacy, 'action', 'rename-session', name],
+                                     capture_output=True, text=True, timeout=15)
+            if renamed.returncode:
+                raise RuntimeError(renamed.stderr.strip() or renamed.stdout.strip())
+        names[path] = name
+        temporary = registry.with_suffix('.tmp')
+        temporary.write_text(json.dumps(names, ensure_ascii=False, indent=2) + '\n')
+        temporary.replace(registry)
+        return name
+
+
+def action(*args, pane_id=None):
+    env = os.environ.copy()
+    # Zellij does not update existing panes' environment after a session rename.
+    session = env.get('ZELLIJ_SESSION_NAME', '')
+    if session.startswith('zl-'):
+        registry = Path(env.get('XDG_STATE_HOME', str(Path.home() / '.local/state'))) / 'zl/sessions.json'
+        if registry.exists():
+            for path, name in json.loads(registry.read_text()).items():
+                if session == 'zl-' + hashlib.sha256(os.fsencode(path)).hexdigest()[:16]:
+                    env['ZELLIJ_SESSION_NAME'] = name
+                    break
+    if pane_id is not None:
+        env["ZELLIJ_PANE_ID"] = str(pane_id)
+    result = subprocess.run(['zellij', 'action', *map(str, args)],
+                            capture_output=True, text=True, timeout=15, env=env)
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip())
+    return result.stdout.strip()
+
+
+def panes():
+    return json.loads(action('list-panes', '--json'))
+
+
+def project_panes():
+    all_panes = panes()
+    caller = next((p for p in all_panes if str(p['id']) == os.environ.get('ZELLIJ_PANE_ID')
+                   and not p['is_plugin']), None)
+    tabs = json.loads(action('list-tabs', '--json'))
+    tab_id = caller['tab_id'] if caller else next(t['tab_id'] for t in tabs if t['active'])
+    # Collapsed members of Zellij 0.45 stacks can be marked suppressed.
+    return sorted((p for p in all_panes if p['tab_id'] == tab_id and not p['is_plugin']
+                   and p['title'] != 'zl-helper'),
+                  key=lambda p: p['id'])
+
+
+def ordered(items):
+    names = ('helix', 'codex', 'terminal')
+    return sorted(items, key=lambda p: (names.index(p['title']) if p['title'] in names else 3, p['id']))
+
+
+def focus(pane):
+    if pane['is_focused']:
+        return
+    def fullscreen():
+        tabs = json.loads(action('list-tabs', '--json'))
+        return next(t for t in tabs if t['tab_id'] == pane['tab_id'])['is_fullscreen_active']
+
+    was_fullscreen = fullscreen()
+    action('focus-pane-id', f"terminal_{pane['id']}")
+    # Focusing another tiled pane can leave fullscreen. Recheck before toggling
+    # so versions/actions that already preserve fullscreen do not switch it off.
+    if was_fullscreen and not fullscreen():
+        action('toggle-fullscreen', pane_id=pane['id'])
+
+
+def dispatch(command, value):
+    items = project_panes()
+    if not items:
+        raise RuntimeError('no tool panes in this tab')
+    if command == 'focus':
+        names = ('helix', 'codex', 'terminal')
+        if value.isdigit() and int(value) > 3:
+            extras = [p for p in ordered(items) if p['title'] not in names]
+            index = int(value) - 4
+            if index >= len(extras):
+                raise RuntimeError(f'no tool in slot {value}')
+            target = extras[index]
+        else:
+            if value in ('1', '2', '3'):
+                value = names[int(value) - 1]
+            matches = [p for p in items if p['title'] == value]
+            if len(matches) != 1:
+                raise RuntimeError(f'expected one pane named {value}, found {len(matches)}')
+            target = matches[0]
+        focus(target)
+    elif command == 'cycle':
+        tools = [p for p in ordered(items) if p['title'] != 'helix']
+        if not tools:
+            raise RuntimeError('no upper tools')
+        current = next((i for i, p in enumerate(tools) if p['is_focused']), None)
+        offset = 1 if value == 'next' else -1
+        focus(tools[(current + offset) % len(tools)] if current is not None else tools[0 if offset == 1 else -1])
+    elif command == 'new':
+        tools = [p for p in items if p['title'] != 'helix' and not p['is_floating']]
+        if not tools:
+            raise RuntimeError('no upper tool pane; keep at least one tool open')
+        target = next((p for p in tools if p['is_focused']), tools[0])
+        focus(target)
+        name = value or f'tool-{max(p["id"] for p in items) + 1}'
+        if name in ('helix', 'codex', 'terminal', 'zl-helper') or any(p['title'] == name for p in items):
+            raise RuntimeError(f'pane name already used or reserved: {name}')
+        args = ['new-pane', '--stacked', '--near-current-pane', '--name', name]
+        if target.get('pane_cwd'):
+            args += ['--cwd', target['pane_cwd']]
+        created = action(*args, pane_id=target['id'])
+        if created.startswith('terminal_'):
+            action('focus-pane-id', created)
+    elif command == 'layout':
+        tabs = json.loads(action('list-tabs', '--json'))
+        tab = next(t for t in tabs if t['tab_id'] == items[0]['tab_id'])
+        current = tab.get('active_swap_layout_name') or 'portrait'
+        desired = ('laptop' if current == 'portrait' else 'portrait') if value == 'toggle' else value
+        for _ in range(3):
+            # The initial base layout has no swap name: select the named variant too.
+            actual = next(t for t in json.loads(action('list-tabs', '--json'))
+                          if t['tab_id'] == tab['tab_id']).get('active_swap_layout_name')
+            if actual == desired:
+                return
+            action('next-swap-layout')
+        raise RuntimeError('this tab does not have the zl portrait/laptop swap layouts')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest='command')
+    start = sub.add_parser('start', help='create/attach to the current directory session (default)')
+    start.add_argument('--session-name', action='store_true')
+    p = sub.add_parser('focus', help='focus a tool by name or slot (1=Helix, 2=Codex, 3=terminal)')
+    p.add_argument('value')
+    p = sub.add_parser('cycle', help='cycle upper tools, excluding Helix')
+    p.add_argument('value', choices=['next', 'previous'])
+    p = sub.add_parser('new', help='add a shell to the tool stack')
+    p.add_argument('value', nargs='?', default='')
+    p = sub.add_parser('layout', help='rearrange existing panes')
+    p.add_argument('value', nargs='?', choices=['portrait', 'laptop', 'toggle'], default='toggle')
+    p = sub.add_parser('_key', help='internal shortcut dispatcher')
+    p.add_argument('operation')
+    p.add_argument('value', nargs='?', default='')
+    p = sub.add_parser('_worker', help='internal shortcut dispatcher')
+    p.add_argument('pane')
+    p.add_argument('operation')
+    p.add_argument('value')
+    args = parser.parse_args()
+    if args.command in (None, 'start'):
+        cwd = Path.cwd().resolve()
+        name_only = getattr(args, 'session_name', False)
+        if not name_only and (os.environ.get('ZELLIJ') or os.environ.get('HERDR_ENV') == '1'):
+            raise RuntimeError('start zl from a Ghostty shell outside a multiplexer')
+        for program in ('zellij', 'hx', 'codex'):
+            if not shutil.which(program):
+                raise RuntimeError(f'{program} is not installed or not on PATH')
+        session = project_session(cwd)
+        if name_only:
+            print(session)
+            return
+        # Ensure keybindings can find this script even before Stow is run.
+        os.environ['PATH'] = str(SCRIPT.parent) + os.pathsep + os.environ['PATH']
+        os.environ['ZELLIJ_CONFIG_DIR'] = str(CONFIG)
+        os.execvp('zellij', ['zellij', '--config-dir', str(CONFIG), '--config', str(CONFIG / 'config.kdl'),
+                            '--layout', str(CONFIG / 'layouts/project.kdl'),
+                            'attach', '--create', session])
+    if not os.environ.get('ZELLIJ_SESSION_NAME'):
+        raise RuntimeError('run tool commands inside a Zellij session')
+    if args.command == '_key':
+        # Run bindings open a temporary floating pane. Dispatch only after it closes,
+        # so it cannot disturb focus, layout matching or the new pane location.
+        logs = Path(os.environ.get('XDG_STATE_HOME', str(Path.home() / '.local/state'))) / 'zl'
+        logs.mkdir(parents=True, exist_ok=True)
+        with (logs / 'shortcuts.log').open('a') as log:
+            subprocess.Popen([str(SCRIPT), '_worker', os.environ['ZELLIJ_PANE_ID'],
+                              args.operation, args.value], stdin=subprocess.DEVNULL,
+                             stdout=log, stderr=log, start_new_session=True)
+        return
+    if args.command == '_worker':
+        deadline = time.monotonic() + 5
+        while any(str(p['id']) == args.pane and not p['is_plugin'] for p in panes()):
+            if time.monotonic() > deadline:
+                raise RuntimeError('shortcut pane did not close')
+            time.sleep(0.02)
+        os.environ.pop('ZELLIJ_PANE_ID', None)
+        dispatch(args.operation, args.value)
+        return
+    dispatch(args.command, args.value)
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (OSError, RuntimeError, ValueError, KeyError, StopIteration, subprocess.TimeoutExpired) as exc:
+        sys.exit(f'zl: {exc}')

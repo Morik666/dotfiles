@@ -1,0 +1,39 @@
+default_layout "project"
+// Alt shortcuts are handled here; Ghostty uses Ctrl+Shift for its own tabs.
+// Disable automatic rearrangement: zl new explicitly adds to the tool stack.
+auto_layout false
+show_startup_tips false
+show_release_notes false
+on_force_close "detach"
+copy_command "wl-copy"
+scrollback_editor "hx"
+pane_frames true
+keybinds {
+    normal clear-defaults=true {
+        bind "Ctrl g" { SwitchToMode "Locked"; }
+        bind "Alt Enter" { ToggleFocusFullscreen; }
+        bind "Alt h" { MoveFocus "Left"; }
+        bind "Alt j" { MoveFocus "Down"; }
+        bind "Alt k" { MoveFocus "Up"; }
+        bind "Alt l" { MoveFocus "Right"; }
+        bind "Alt Shift d" { Detach; }
+        bind "Alt Shift w" { CloseFocus; }
+        bind "Alt Shift e" { EditScrollback; }
+        bind "Alt Shift r" { SwitchToMode "Resize"; }
+        bind "Alt Shift p" { SwitchToMode "Pane"; }
+        bind "Alt 1" { Run "zl" "_key" "focus" "1" { floating true; close_on_exit true; name "zl-helper"; }; }
+        bind "Alt 2" { Run "zl" "_key" "focus" "2" { floating true; close_on_exit true; name "zl-helper"; }; }
+        bind "Alt 3" { Run "zl" "_key" "focus" "3" { floating true; close_on_exit true; name "zl-helper"; }; }
+        bind "Alt 4" { Run "zl" "_key" "focus" "4" { floating true; close_on_exit true; name "zl-helper"; }; }
+        bind "Alt 5" { Run "zl" "_key" "focus" "5" { floating true; close_on_exit true; name "zl-helper"; }; }
+        bind "Alt 6" { Run "zl" "_key" "focus" "6" { floating true; close_on_exit true; name "zl-helper"; }; }
+        bind "Alt 7" { Run "zl" "_key" "focus" "7" { floating true; close_on_exit true; name "zl-helper"; }; }
+        bind "Alt 8" { Run "zl" "_key" "focus" "8" { floating true; close_on_exit true; name "zl-helper"; }; }
+        bind "Alt 9" { Run "zl" "_key" "focus" "9" { floating true; close_on_exit true; name "zl-helper"; }; }
+        bind "Alt q" { Run "zl" "_key" "cycle" "previous" { floating true; close_on_exit true; name "zl-helper"; }; }
+        bind "Alt e" { Run "zl" "_key" "cycle" "next" { floating true; close_on_exit true; name "zl-helper"; }; }
+        bind "Alt Shift t" { Run "zl" "_key" "new" "" { floating true; close_on_exit true; name "zl-helper"; }; }
+        bind "Alt Shift Space" { Run "zl" "_key" "layout" "toggle" { floating true; close_on_exit true; name "zl-helper"; }; }
+    }
+    locked { bind "Ctrl g" { SwitchToMode "Normal"; }; }
+}
