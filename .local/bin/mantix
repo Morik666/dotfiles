@@ -1,5 +1,1 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-exec python3 -B "$script_dir/../share/mantix/mantix.py" "$@"
+../../stow/common/.local/bin/mantix

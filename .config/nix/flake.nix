@@ -1,5 +1,5 @@
 {
-  description = "flake for ando";
+  description = "NixOS configurations for ando and bespin";
 
   nixConfig = {
     extra-substituters = [ "https://noctalia.cachix.org" ];
@@ -20,8 +20,14 @@
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
-          ./configuration.nix
+          ./hosts/ando
         ];
+      };
+      bespin = nixpkgs.lib.nixosSystem {
+        # Change this if bespin uses ARM hardware.
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [ ./hosts/bespin ];
       };
     };
   };

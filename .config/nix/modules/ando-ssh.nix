@@ -3,7 +3,7 @@ let
   homeSSH = pkgs.writeShellApplication {
     name = "home-ssh-firewall";
     runtimeInputs = [ pkgs.iptables pkgs.networkmanager pkgs.util-linux ];
-    text = builtins.readFile ./home-ssh-firewall.sh;
+    text = builtins.readFile ./ando-ssh-firewall.sh;
   };
 in
 {

@@ -3,6 +3,8 @@ import argparse
 import json
 import os
 import shutil
+import shlex
+import socket
 import subprocess
 import sys
 from collections import defaultdict
@@ -34,18 +36,19 @@ class Generation:
 
 def usage() -> str:
     return """Usage:
-  mantix update
-  mantix install
-  mantix stow
+  mantix update [--host HOST]
+  mantix install [--host HOST]
+  mantix stow [--host HOST] [--dry-run]
   mantix cleanup
 
 Environment:
-  MYNIX_FLAKE  Path to your Nix flake. Defaults to ~/.config/nix.
+  MANTIX_DOTFILES  Repository path. Defaults to ~/.dotfiles.
+  MYNIX_FLAKE     Flake path. Defaults to $MANTIX_DOTFILES/.config/nix.
 
 Commands:
   update        Update flake inputs and switch to the new system.
   install       Switch to the current flake without updating inputs.
-  stow          Symlink dotfiles from ~/.dotfiles into ~.
+  stow          Link common and hostname-specific dotfiles into ~.
   cleanup       Prune old NixOS boot generations and collect garbage.
 """
 
@@ -69,8 +72,21 @@ def run(command: list[str], *, capture: bool = False) -> subprocess.CompletedPro
     )
 
 
+def dotfiles_dir() -> Path:
+    return Path(os.environ.get("MANTIX_DOTFILES", "~/.dotfiles")).expanduser().resolve()
+
+
 def flake_dir() -> Path:
-    return Path(os.environ.get("MYNIX_FLAKE", "~/.config/nix")).expanduser()
+    return Path(os.environ.get("MYNIX_FLAKE", str(dotfiles_dir() / ".config/nix"))).expanduser().resolve()
+
+
+def selected_host(args: argparse.Namespace) -> str:
+    host = args.host or socket.gethostname().split(".")[0]
+    hosts = dotfiles_dir() / ".config/nix/hosts"
+    available = sorted(p.name for p in hosts.iterdir() if (p / "default.nix").is_file()) if hosts.is_dir() else []
+    if host not in available:
+        die(f"unknown host {host!r}; use --host with one of: {', '.join(available) or '(no hosts found)'}")
+    return host
 
 
 def switch_checks() -> Path:
@@ -86,33 +102,75 @@ def switch_checks() -> Path:
     return flake
 
 
-def update_system(_args: argparse.Namespace) -> None:
+def update_system(args: argparse.Namespace) -> None:
+    host = selected_host(args)
     flake = switch_checks()
     require_command("nix")
 
     print(f"==> Updating flake inputs in {flake}")
-    run(["nix", "flake", "update", "--flake", str(flake)])
+    run(["nix", "flake", "update", "--flake", f"path:{flake}"])
 
     print("==> Switching NixOS system")
-    run(["sudo", "nixos-rebuild", "switch", "--flake", str(flake)])
+    run(["sudo", "nixos-rebuild", "switch", "--flake", f"path:{flake}#{host}"])
 
 
-def install_system(_args: argparse.Namespace) -> None:
+def install_system(args: argparse.Namespace) -> None:
+    host = selected_host(args)
     flake = switch_checks()
 
     print("==> Switching NixOS system from current flake")
-    run(["sudo", "nixos-rebuild", "switch", "--flake", str(flake)])
+    run(["sudo", "nixos-rebuild", "switch", "--flake", f"path:{flake}#{host}"])
 
 
-def stow_dotfiles(_args: argparse.Namespace) -> None:
-    dotfiles_dir = Path.home() / ".dotfiles"
-    if not dotfiles_dir.is_dir():
-        die(f"dotfiles directory not found: {dotfiles_dir}")
+def legacy_links(source: Path, target: Path, repository: Path, relative: Path = Path()):
+    """Find only links owned by the old root-level Stow layout.
+
+    Forwarding links in the repository keep these usable until migration.
+    Never traverse a target symlink or replace user-owned files/directories.
+    """
+    for entry in sorted(source.iterdir()):
+        if entry.name == ".stow-local-ignore":
+            continue
+        rel = relative / entry.name
+        destination = target / entry.name
+        if destination.is_symlink():
+            old_target = Path(os.path.abspath(destination.parent / os.readlink(destination)))
+            if old_target == repository / rel and destination.resolve() == entry.resolve():
+                yield destination, entry
+        elif entry.is_dir() and not entry.is_symlink() and destination.is_dir():
+            yield from legacy_links(entry, destination, repository, rel)
+
+
+def stow_dotfiles(args: argparse.Namespace) -> None:
+    repository = dotfiles_dir()
+    host = selected_host(args)
+    stow_dir = repository / "stow"
+    packages = ["common", host]
+    for package in packages:
+        if not (stow_dir / package).is_dir():
+            die(f"missing Stow package: {stow_dir / package}")
+
+    migrations = [link for package in packages
+                  for link in legacy_links(stow_dir / package, Path.home(), repository)]
+    command = ["stow", "--dir", str(stow_dir), "--target", str(Path.home()),
+               "--restow", *packages]
+    for destination, source in migrations:
+        print(f"==> Migrate legacy link: {destination} -> {source}")
+    print(f"==> {shlex.join(command)}")
+    if args.dry_run:
+        print("==> Preview only; no links changed and Stow was not run.")
+        return
 
     require_command("stow")
-
-    print(f"==> Stowing dotfiles from {dotfiles_dir} into {Path.home()}")
-    run(["stow", "--dir", str(dotfiles_dir), "--target", str(Path.home()), "."])
+    for destination, source in migrations:
+        old_link = os.readlink(destination)
+        destination.unlink()
+        try:
+            destination.symlink_to(os.path.relpath(source, destination.parent))
+        except OSError:
+            destination.symlink_to(old_link)
+            raise
+    run(command)
 
 
 def normalize_generation(raw: dict) -> Generation:
@@ -278,6 +336,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     stow = subparsers.add_parser("stow", help="symlink dotfiles into $HOME")
     stow.set_defaults(func=stow_dotfiles)
+    stow.add_argument("--dry-run", action="store_true", help="show planned links and command without running Stow")
+    for command in (update, install, stow):
+        command.add_argument("--host", help="host configuration; defaults to this machine's hostname")
 
     cleanup = subparsers.add_parser("cleanup", help="prune old boot generations and collect garbage")
     cleanup.set_defaults(func=cleanup_boot_generations)

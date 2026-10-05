@@ -1,7 +1,7 @@
 { pkgs, inputs, ... }:
 
 {
-  services.upower.enable = true;
+  services.upower.enable = true; # Report battery levels and power status to desktop apps.
   services.power-profiles-daemon.enable = true;
 
   fonts.packages = with pkgs; [
@@ -12,42 +12,13 @@
 
   environment.systemPackages = with pkgs; [
     brightnessctl
-    playerctl
+    playerctl # Control media players from scripts or keybindings (play, pause, skip).
     cliphist
     wl-clipboard
     flameshot
-    ddcutil
-    bluez
-    stow
-    zoxide
-    (python3.withPackages (pythonPackages: with pythonPackages; [
-      requests
-    ]))
-
-    git
-    zip
-    gzip
-    unzip
-    unrar
-    wget
-    htop
-    socat
-    ripgrep
-    # neofetch
-    fastfetch
-    starship
-    dig
-    
-    zellij
+    ddcutil # Adjust external monitor brightness and settings over DDC/CI.
+    bluez # Bluetooth tools, including bluetoothctl for pairing and managing devices.
     inputs.nixpkgs-codex.legacyPackages.${pkgs.stdenv.hostPlatform.system}.codex
-    lazygit
-    vim
-    helix
-    lua-language-server
-    stylua
-    ruff
-    yazi
-    superfile
     # kitty
     ghostty
     remmina
@@ -63,19 +34,19 @@
     # }
 
     nemo
-    kdePackages.ark
+    kdePackages.ark # KDE graphical archive manager for creating and extracting archives.
     kdePackages.dolphin
     kdePackages.breeze-icons
     kdePackages.gwenview
-    kdePackages.okular
+    kdePackages.okular # KDE document viewer for PDFs, ebooks and other formats.
     libreoffice-qt-stable
-    mpv
+    mpv # Audio and video player with command-line controls.
     simple-scan
     # geeqie
 
     adw-gtk3
     glib
-    nwg-look
+    nwg-look # Graphical settings for GTK themes, icons, fonts and cursors.
 
     inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default
     # Disabled until Hyprspace supports Hyprland 0.56.
@@ -91,11 +62,11 @@
     telegram-desktop
     protonmail-desktop
     whatsie
-    vesktop
+    vesktop # Alternative Discord desktop client with Vencord customization.
 
     #gparted
     gnome-disk-utility
-    file-roller
+    file-roller # GNOME graphical archive manager; overlaps with Ark.
     pavucontrol
     pulseaudioFull
 

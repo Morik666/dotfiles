@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source_dir="${LUANTI_SOURCE:-$HOME/Projects/CodingMantis/luanti}"
+luanti_bin="${LUANTI_BIN:-$source_dir/bin/luanti}"
+
+if [[ ! -x "$luanti_bin" ]]; then
+  echo "luanti-server: Luanti executable not found at $luanti_bin" >&2
+  echo "Build it with build-luanti-nixos or set LUANTI_BIN." >&2
+  exit 1
+fi
+
+exec "$luanti_bin" --server --gameid VoxeLibre --port 30000 "$@"

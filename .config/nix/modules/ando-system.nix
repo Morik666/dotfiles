@@ -1,21 +1,6 @@
 { pkgs, ... }:
 
 {
-  nix.settings = {
-    experimental-features = [ "nix-command" "flakes" ];
-    max-jobs = 1;
-    cores = 4;
-  };
-
-  users.defaultUserShell = pkgs.fish;
-
-  nixpkgs = {
-    config = {
-      allowUnfree = true;
-      # allowUnfreePredicate = pkg: builtins.elem (builtins.parseDrvName pkg.name).name ["steam"];
-    };
-  };
-
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
@@ -45,20 +30,6 @@
     };
   };
 
-  time.timeZone = "Europe/Kyiv";
-  i18n.defaultLocale = "en_US.UTF-8";
-  i18n.extraLocaleSettings = {
-    LC_ADDRESS = "uk_UA.UTF-8";
-    LC_IDENTIFICATION = "uk_UA.UTF-8";
-    LC_MEASUREMENT = "uk_UA.UTF-8";
-    LC_MONETARY = "uk_UA.UTF-8";
-    LC_NAME = "uk_UA.UTF-8";
-    LC_NUMERIC = "uk_UA.UTF-8";
-    LC_PAPER = "uk_UA.UTF-8";
-    LC_TELEPHONE = "uk_UA.UTF-8";
-    LC_TIME = "uk_UA.UTF-8";
-  };
-
   # Configure keymap in X11
   services.xserver.xkb = {
     layout = "us";
@@ -69,13 +40,7 @@
   #   options = "grp:win_space_toggle";
   # };
 
-  # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.jarves = {
-    isNormalUser = true;
-    description = "jarves";
-    extraGroups = [ "networkmanager" "wheel" "scanner" "lp" ];
-    packages = [ ];
-  };
+  users.users.jarves.extraGroups = [ "networkmanager" "scanner" "lp" ];
 
   # Enable automatic login for the user.
   services.getty.autologinUser = "jarves";

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source_dir="${LUANTI_SOURCE:-$HOME/Projects/CodingMantis/luanti}"
+runtime_shell="${LUANTI_RUNTIME_SHELL:-$HOME/.local/share/luanti/runtime.nix}"
+
+if [[ -n "${LUANTI_BIN:-}" ]]; then
+  candidates=("$LUANTI_BIN")
+else
+  candidates=(
+    "$source_dir/bin/luanti"
+    "$source_dir/build-nixos/bin/luanti"
+  )
+fi
+
+for luanti_bin in "${candidates[@]}"; do
+  if [[ -x "$luanti_bin" ]]; then
+    if [[ ! -f "$runtime_shell" ]]; then
+      echo "luanti-client: runtime environment not found at $runtime_shell" >&2
+      exit 1
+    fi
+
+    printf -v command '%q ' "$luanti_bin" "$@"
+    exec nix-shell "$runtime_shell" --run "exec $command"
+  fi
+done
+
+message="Luanti executable not found. Build it with build-luanti-nixos or set LUANTI_BIN."
+echo "luanti-client: $message" >&2
+
+if command -v notify-send >/dev/null 2>&1; then
+  notify-send --urgency=critical "Luanti (Development Build)" "$message"
+fi
+
+exit 1

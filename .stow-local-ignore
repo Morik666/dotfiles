@@ -3,3 +3,8 @@
 ^/\.git(/.*)?$
 ^/AGENTS\.md$
 ^/README\.md$
+^/stow(/.*)?$
+^/tests(/.*)?$
+^/docs(/.*)?$
+^/\.gitignore$
+^/commands\.txt$

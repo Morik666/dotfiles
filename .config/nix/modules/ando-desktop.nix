@@ -13,15 +13,15 @@
   # services.displayManager.cosmic-greeter.enable = true;
   # services.desktopManager.cosmic.enable = true;
   services.blueman.enable = true;
-  services.devmon.enable = true;
-  services.gvfs.enable = true;
+  services.devmon.enable = true; # Automatically mount removable drives via udisks.
+  services.gvfs.enable = true; # Give GTK file managers access to trash, remote shares and mounted devices.
   services.udisks2.enable = true;
-  services.avahi = {
+  services.avahi = { # Discover local network services and resolve .local hostnames via mDNS.
     enable = true;
     nssmdns4 = true;
   };
 
-  hardware.sane = {
+  hardware.sane = { # Scanner drivers and backend used by apps such as Simple Scan.
     enable = true;
     extraBackends = [ pkgs.hplipWithPlugin ];
   };

@@ -1,0 +1,1 @@
+../../../../../.config/nix/packages/mantix.py
