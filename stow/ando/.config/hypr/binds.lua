@@ -13,7 +13,7 @@ hl.bind(mainMod .. " + M", hl.dsp.exec_cmd(sessionMenu))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + V", hl.dsp.exec_cmd(clipboard))
 hl.bind(mainMod .. " + A", hl.dsp.exec_cmd(menu))
-hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
+hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("ghostty -e bash ~/.config/hypr/scripts/restart-printing.sh"))
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))
 hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
 -- SUPER + Tab remains disabled until Hyprspace supports Hyprland 0.56.

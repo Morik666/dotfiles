@@ -8,7 +8,13 @@
     portalPackage = pkgs.xdg-desktop-portal-hyprland;
   };
   programs.fish.enable = true;
+  security.polkit.enable = true;
+  # Let Imager retain access to the user's Wayland display when run with sudo.
+  security.sudo.extraConfig = ''
+    Defaults!/run/current-system/sw/bin/rpi-imager env_keep += "QT_QPA_PLATFORM WAYLAND_DISPLAY XDG_RUNTIME_DIR"
+  '';
   programs.steam.enable = true;
+  programs.steam.extraPackages = [ pkgs.gamescope ];
   programs.kdeconnect.enable = true;
   # services.displayManager.cosmic-greeter.enable = true;
   # services.desktopManager.cosmic.enable = true;

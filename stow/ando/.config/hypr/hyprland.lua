@@ -31,9 +31,14 @@ end)
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
 hl.env("XDG_SESSION_TYPE", "wayland")
+hl.env("QT_QPA_PLATFORM", "wayland;xcb")
 hl.env("QT_QPA_PLATFORMTHEME", "kde")
 
 hl.config({
+    general = {
+        gaps_in = 2,
+        gaps_out = 6,
+    },
     input = {
         kb_layout = "us,ua",
         kb_variant = ",winkeys",

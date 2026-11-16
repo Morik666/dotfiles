@@ -12,6 +12,7 @@
 
   environment.systemPackages = with pkgs; [
     brightnessctl
+    hyprpolkitagent # Password prompts for privileged desktop operations.
     playerctl # Control media players from scripts or keybindings (play, pause, skip).
     cliphist
     wl-clipboard
@@ -72,5 +73,6 @@
 
     blockbench
     libresprite
+    rpi-imager # Imager for Raspberry Pi
   ];
 }
