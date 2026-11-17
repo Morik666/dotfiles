@@ -1,0 +1,21 @@
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    stop_grace_period: 1m
+    environment:
+      TZ: Europe/Kyiv
+    volumes:
+      - /opt/homeassistant/config:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"

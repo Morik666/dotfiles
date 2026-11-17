@@ -1,0 +1,24 @@
+# Home Assistant package. All three sensors share one serial read every 15 seconds.
+rest:
+  - resource: http://127.0.0.1:8766/status
+    scan_interval: 15
+    timeout: 5
+    sensor:
+      - name: Inverter AC Input Voltage
+        unique_id: crait_fullenergy_ac_input_voltage
+        value_template: "{{ value_json.ac_input_voltage }}"
+        unit_of_measurement: V
+        device_class: voltage
+        state_class: measurement
+      - name: Inverter Battery Charge
+        unique_id: crait_fullenergy_battery_charge
+        value_template: "{{ value_json.battery_charge }}"
+        unit_of_measurement: "%"
+        device_class: battery
+        state_class: measurement
+      - name: Inverter Battery Voltage
+        unique_id: crait_fullenergy_battery_voltage
+        value_template: "{{ value_json.battery_voltage }}"
+        unit_of_measurement: V
+        device_class: voltage
+        state_class: measurement

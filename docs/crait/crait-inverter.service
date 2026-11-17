@@ -1,0 +1,18 @@
+[Unit]
+Description=Full Energy inverter read-only status for Home Assistant
+After=network.target
+
+[Service]
+Type=simple
+User=jarves
+SupplementaryGroups=dialout
+ExecStart=/usr/bin/python3 /opt/crait-inverter/inverter-reader.py --serve
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
