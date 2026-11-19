@@ -80,11 +80,9 @@ Bespin is a configuration scaffold until installation-specific values are set:
    hardware placeholder is replaced and an SSH key is supplied.
 
 Immich is enabled in `modules/bespin-packages.nix`; its NixOS service module
-provides PostgreSQL, Redis and machine learning. It listens on port 2283 on all
-IPv4 interfaces with that port open in the host firewall. On your home network,
-visit `http://<bespin-address>:2283` and create the first admin account.
-Media lives in `/var/lib/immich`; plan its storage and database/media backups
-before importing your library. No router port forwarding or VPN is configured.
+provides PostgreSQL, Redis and machine learning. Set up the
+[Immich HDD mirror](docs/bespin-installation.md#immich-hdd-mirror-and-phone-uploads)
+before uploading media. On the home LAN, connect to `http://192.168.1.163:2283`.
 VPN, file sharing and other media services can be added as bespin modules later.
 
 ## Checks
